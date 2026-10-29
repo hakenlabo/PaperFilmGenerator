@@ -406,8 +406,12 @@ const I18N = {
   "fmt_vv35": "VistaVision (8-perf horizontal)",
   "fmt_td70": "70mm 5-perf (Todd-AO)",
   "fmt_im70": "IMAX 15/70 (15-perf horizontal)",
+  "fmt_c8": "Custom 8mm",
+  "fmt_c16": "Custom 16mm",
+  "fmt_c35": "Custom 35mm",
   "fmt_c45": "Custom 45mm",
-  "fmt_c50": "Custom 50mm"
+  "fmt_c50": "Custom 50mm",
+  "fmt_c70": "Custom 70mm"
  },
  "ko": {
   "tolNote": "필름 치수는 SMPTE 규격(SMPTE 7·59·109·119·139·152·157·231 등)을 따릅니다. 규격 자체에 허용 범위가 있어 화면 위치 등은 그 중간값으로 그렸습니다. 또한 인쇄나 스캔 과정에서 종이가 늘거나 줄 수 있으므로 실제 필름과 약간의 오차가 생길 수 있습니다.",
@@ -510,8 +514,12 @@ const I18N = {
   "fmt_vv35": "비스타비전 (8퍼포 가로 주행)",
   "fmt_td70": "70mm 5퍼포 (Todd-AO)",
   "fmt_im70": "IMAX 15/70 (15퍼포 가로 주행)",
+  "fmt_c8": "자작 8mm",
+  "fmt_c16": "자작 16mm",
+  "fmt_c35": "자작 35mm",
   "fmt_c45": "자작 45mm",
-  "fmt_c50": "자작 50mm"
+  "fmt_c50": "자작 50mm",
+  "fmt_c70": "자작 70mm"
  }
 };
 let LANG = 'ja';
@@ -593,8 +601,13 @@ const FORMATS = [
    film:69.95, pitch:71.25,  across:48.56, along:69.60, rot:true,
    perf:{w:2.794,h:1.981,r:0.51,edge:5.46,per:15,sides:2,at:'span'}, left:10.695},
 
+  /* 自作：実在の規格ではなく、幅だけ決めて 16:9／4:3 の画面を置く（縁が狭いとパーフは自動で省略） */
+  {key:'c8',   label:'自作 8mm',  group:'自作', film:8.0,  custom:true},
+  {key:'c16',  label:'自作 16mm', group:'自作', film:16.0, custom:true},
+  {key:'c35',  label:'自作 35mm', group:'自作', film:35.0, custom:true},
   {key:'c45',  label:'自作 45mm', group:'自作', film:45.0, custom:true},
-  {key:'c50',  label:'自作 50mm', group:'自作', film:50.0, custom:true}
+  {key:'c50',  label:'自作 50mm', group:'自作', film:50.0, custom:true},
+  {key:'c70',  label:'自作 70mm', group:'自作', film:70.0, custom:true}
 ];
 const FMT = Object.fromEntries(FORMATS.map(f => [f.key, f]));
 
