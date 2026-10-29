@@ -14,6 +14,8 @@
   header .note{color:var(--sub);font-size:12px}
   header .xlink{margin-left:auto;font-size:12px;color:var(--blue);text-decoration:none}
   header .xlink:hover{text-decoration:underline}
+  header .lang{flex:none;width:auto;font-size:12px;padding:3px 6px}
+  :lang(ko) body{font-family:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",Arial,sans-serif}
   .cols{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start}
   @media (max-width:900px){.cols{grid-template-columns:1fr}}
   .panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px}
@@ -63,23 +65,28 @@
 <body>
 <div class="wrap">
 <header>
-  <h1>スキャン → 動画</h1>
-  <span class="note">ペーパーフィルムジェネレーターの用紙をスキャンした画像から動画をつくります</span>
-  <a class="xlink" href="./">← ペーパーフィルムジェネレーター</a>
+  <h1 data-i18n="appTitle">スキャン → 動画</h1>
+  <span class="note" data-i18n="note">ペーパーフィルムジェネレーターの用紙をスキャンした画像から動画をつくります</span>
+  <a class="xlink" href="./" data-i18n="toGen">← ペーパーフィルムジェネレーター</a>
+  <select id="lang" class="lang" aria-label="Language">
+    <option value="ja">日本語</option>
+    <option value="en">English</option>
+    <option value="ko">한국어</option>
+  </select>
 </header>
 
 <div class="cols">
   <div class="panel">
-    <h2>1. スキャン画像</h2>
-    <div class="drop" id="drop">
+    <h2 data-i18n="hScan">1. スキャン画像</h2>
+    <div class="drop" id="drop" data-i18n-html="dropHtml">
       <strong>スキャンをドロップ</strong>
       A4を600dpi・カラー推奨<br>複数ページはファイル名順につながります
     </div>
     <div id="pages"></div>
 
-    <h2 style="margin-top:18px">2. フィルム幅</h2>
+    <h2 style="margin-top:18px" data-i18n="hFilm">2. フィルム幅</h2>
     <div class="row">
-      <label>用紙</label>
+      <label data-i18n="paper">用紙</label>
       <select id="paper">
         <option value="A5">A5</option>
         <option value="A4" selected>A4</option>
@@ -87,11 +94,11 @@
       </select>
     </div>
     <div class="row">
-      <label>フィルム</label>
+      <label data-i18n="film">フィルム</label>
       <select id="fmt"></select>
     </div>
     <div class="row" id="aspectRow" style="display:none">
-      <label>画面比</label>
+      <label data-i18n="aspect">画面比</label>
       <select id="aspect">
         <option value="1.7778" selected>16:9</option>
         <option value="1.3333">4:3</option>
@@ -99,90 +106,90 @@
     </div>
     <div class="spec" id="spec"></div>
 
-    <h2 style="margin-top:18px">3. 仕上げ</h2>
+    <h2 style="margin-top:18px" data-i18n="hFinish">3. 仕上げ</h2>
     <div class="row">
-      <label>色の処理</label>
+      <label data-i18n="mode">色の処理</label>
       <select id="mode">
-        <option value="raw" selected>そのまま（無補正・推奨）</option>
-        <option value="paper">紙の白だけ整える</option>
-        <option value="bw">2値化（モノクロ線画）</option>
+        <option value="raw" selected data-i18n="optRaw">そのまま（無補正・推奨）</option>
+        <option value="paper" data-i18n="optPaper">紙の白だけ整える</option>
+        <option value="bw" data-i18n="optBw">2値化（モノクロ線画）</option>
       </select>
     </div>
     <div class="row" id="wrow" style="display:none">
-      <label>白レベル</label>
+      <label data-i18n="white">白レベル</label>
       <input type="range" id="white" min="150" max="255" value="238" style="flex:1">
       <span class="mono" id="wlv" style="font-size:12px">238</span>
     </div>
     <div class="row">
-      <label>枠の内側</label>
+      <label data-i18n="inset">枠の内側</label>
       <input type="range" id="inset" min="0" max="30" value="10" style="flex:1">
       <span class="mono" id="inv" style="font-size:12px">1.0%</span>
     </div>
 
-    <h2 style="margin-top:18px">4. 使う範囲</h2>
+    <h2 style="margin-top:18px" data-i18n="hRange">4. 使う範囲</h2>
     <div class="row">
       <label>IN / OUT</label>
       <input type="number" id="inF" value="1" min="1" style="width:66px">
       <span style="color:var(--sub)">〜</span>
       <input type="number" id="outF" value="1" min="1" style="width:66px">
-      <button class="ghost" id="setIn">ここをIN</button>
-      <button class="ghost" id="setOut">ここをOUT</button>
+      <button class="ghost" id="setIn" data-i18n="setIn">ここをIN</button>
+      <button class="ghost" id="setOut" data-i18n="setOut">ここをOUT</button>
     </div>
     <div class="row">
-      <label>白紙</label>
-      <select id="skip"><option value="1" selected>範囲内の白紙は飛ばす</option><option value="0">白紙も使う</option></select>
+      <label data-i18n="blank">白紙</label>
+      <select id="skip"><option value="1" selected data-i18n="optSkip">範囲内の白紙は飛ばす</option><option value="0" data-i18n="optKeep">白紙も使う</option></select>
     </div>
     <div id="strip"></div>
     <div class="mono" id="rangeInfo" style="font-size:12px;color:var(--sub);margin-top:6px"></div>
 
-    <h2 style="margin-top:18px">5. 動画</h2>
+    <h2 style="margin-top:18px" data-i18n="hVideo">5. 動画</h2>
     <div class="row">
-      <label>出力サイズ</label>
+      <label data-i18n="outsize">出力サイズ</label>
       <select id="outsize">
-        <option value="1080" selected>高さ1080（HD相当）</option>
-        <option value="1440">高さ1440</option>
-        <option value="2160">高さ2160（4K相当）</option>
+        <option value="1080" selected data-i18n="opt1080">高さ1080（HD相当）</option>
+        <option value="1440" data-i18n="opt1440">高さ1440</option>
+        <option value="2160" data-i18n="opt2160">高さ2160（4K相当）</option>
       </select>
     </div>
     <div class="row">
-      <label>フレームレート</label>
+      <label data-i18n="fps">フレームレート</label>
       <select id="fps"><option value="24" selected>24 fps</option><option value="12">12 fps</option><option value="8">8 fps</option></select>
     </div>
     <div class="row">
-      <label>コマ打ち</label>
-      <select id="hold"><option value="1" selected>1コマ打ち</option><option value="2">2コマ打ち</option><option value="3">3コマ打ち</option></select>
+      <label data-i18n="hold">コマ打ち</label>
+      <select id="hold"><option value="1" selected data-i18n="hold1">1コマ打ち</option><option value="2" data-i18n="hold2">2コマ打ち</option><option value="3" data-i18n="hold3">3コマ打ち</option></select>
     </div>
     <div class="row">
-      <label>繰り返し</label>
-      <select id="loop"><option value="1" selected>1回</option><option value="2">2回</option><option value="4">4回</option><option value="8">8回</option></select>
+      <label data-i18n="loop">繰り返し</label>
+      <select id="loop"><option value="1" selected data-i18n="loop1">1回</option><option value="2" data-i18n="loop2">2回</option><option value="4" data-i18n="loop4">4回</option><option value="8" data-i18n="loop8">8回</option></select>
     </div>
     <div class="row">
-      <label>読み取り順</label>
+      <label data-i18n="order">読み取り順</label>
       <select id="order">
-        <option value="col" selected>縦（列ごとに上から下）</option>
-        <option value="row">横（行ごとに左から右）</option>
+        <option value="col" selected data-i18n="optCol">縦（列ごとに上から下）</option>
+        <option value="row" data-i18n="optRow">横（行ごとに左から右）</option>
       </select>
     </div>
-    <button class="primary" id="build" disabled>コマを切り出す</button>
-    <button class="primary" id="rec" disabled style="background:#8b2f2f">動画を書き出す</button>
+    <button class="primary" id="build" disabled data-i18n="build">コマを切り出す</button>
+    <button class="primary" id="rec" disabled style="background:#8b2f2f" data-i18n="rec">動画を書き出す</button>
     <div class="status" id="status"></div>
 
     <div class="help">
       <ul style="padding-left:1.1em;margin:0">
-        <li>スキャンは用紙全体（四隅のトンボを含む）が入るようにしてください。</li>
-        <li>トンボが読めないときは、画像をクリックして左上→右上→左下の順に指定できます。</li>
-        <li>必要なスキャン解像度は上の諸元に出ます。細い幅ほど高いdpiが要ります。</li>
-        <li>A4は1200dpiで約139MP。これを超えるとブラウザが落ちることがあります。1600dpi以上で撮りたいときは、列ごとに切って別々のスキャンにしてください。</li>
-        <li>色を直に塗る場合はカラー（またはフルカラー写真）モードでスキャンし、色の処理は「そのまま」で。</li>
+        <li data-i18n="help1">スキャンは用紙全体（四隅のトンボを含む）が入るようにしてください。</li>
+        <li data-i18n="help2">トンボが読めないときは、画像をクリックして左上→右上→左下の順に指定できます。</li>
+        <li data-i18n="help3">必要なスキャン解像度は上の諸元に出ます。細い幅ほど高いdpiが要ります。</li>
+        <li data-i18n="help4">A4は1200dpiで約139MP。これを超えるとブラウザが落ちることがあります。1600dpi以上で撮りたいときは、列ごとに切って別々のスキャンにしてください。</li>
+        <li data-i18n="help5">色を直に塗る場合はカラー（またはフルカラー写真）モードでスキャンし、色の処理は「そのまま」で。</li>
       </ul>
     </div>
   </div>
 
   <div class="panel">
-    <h2>プレビュー</h2>
+    <h2 data-i18n="preview">プレビュー</h2>
     <div class="stage"><canvas id="view" width="1920" height="1080"></canvas></div>
     <div class="transport">
-      <button class="ghost" id="play">▶ 再生</button>
+      <button class="ghost" id="play" data-i18n="play">▶ 再生</button>
       <input type="range" id="seek" min="0" max="0" value="0">
       <span class="mono" id="pos">— / —</span>
     </div>
@@ -203,6 +210,323 @@
    rot    : 横送り（IMAX・VistaVision）。用紙の上では絵が90°倒れる
    ===================================================================== */
 const MM = 72 / 25.4;
+/* ===== 表示言語（日本語・英語・韓国語）— ジェネレーターと同じ仕組み・同じ保存キー =====
+   画面の文字は data-i18n / data-i18n-html のキーで差し替える */
+const I18N = {
+ "ja": {
+  "note": "ペーパーフィルムジェネレーターの用紙をスキャンした画像から動画をつくります",
+  "toGen": "← ペーパーフィルムジェネレーター",
+  "hScan": "1. スキャン画像",
+  "hFilm": "2. フィルム幅",
+  "hFinish": "3. 仕上げ",
+  "hRange": "4. 使う範囲",
+  "hVideo": "5. 動画",
+  "preview": "プレビュー",
+  "paper": "用紙",
+  "film": "フィルム",
+  "aspect": "画面比",
+  "mode": "色の処理",
+  "white": "白レベル",
+  "inset": "枠の内側",
+  "blank": "白紙",
+  "outsize": "出力サイズ",
+  "fps": "フレームレート",
+  "hold": "コマ打ち",
+  "loop": "繰り返し",
+  "order": "読み取り順",
+  "setIn": "ここをIN",
+  "setOut": "ここをOUT",
+  "build": "コマを切り出す",
+  "rec": "動画を書き出す",
+  "optRaw": "そのまま（無補正・推奨）",
+  "optPaper": "紙の白だけ整える",
+  "optBw": "2値化（モノクロ線画）",
+  "optSkip": "範囲内の白紙は飛ばす",
+  "optKeep": "白紙も使う",
+  "opt1080": "高さ1080（HD相当）",
+  "opt1440": "高さ1440",
+  "opt2160": "高さ2160（4K相当）",
+  "hold1": "1コマ打ち",
+  "hold2": "2コマ打ち",
+  "hold3": "3コマ打ち",
+  "loop1": "1回",
+  "loop2": "2回",
+  "loop4": "4回",
+  "loop8": "8回",
+  "optCol": "縦（列ごとに上から下）",
+  "optRow": "横（行ごとに左から右）",
+  "play": "▶ 再生",
+  "help1": "スキャンは用紙全体（四隅のトンボを含む）が入るようにしてください。",
+  "help2": "トンボが読めないときは、画像をクリックして左上→右上→左下の順に指定できます。",
+  "help3": "必要なスキャン解像度は上の諸元に出ます。細い幅ほど高いdpiが要ります。",
+  "help4": "A4は1200dpiで約139MP。これを超えるとブラウザが落ちることがあります。1600dpi以上で撮りたいときは、列ごとに切って別々のスキャンにしてください。",
+  "help5": "色を直に塗る場合はカラー（またはフルカラー写真）モードでスキャンし、色の処理は「そのまま」で。",
+  "appTitle": "スキャン → 動画",
+  "dropHtml": "<strong>スキャンをドロップ</strong>\n      A4を600dpi・カラー推奨<br>複数ページはファイル名順につながります",
+  "custom": "自作",
+  "stop": "■ 停止",
+  "specFrame": "／コマ {w} × {h} mm",
+  "specRatio": "（映像 {r}:1{rot}）",
+  "specRot": "・横送り",
+  "specLayout": "<b>{c}列 × {r}段 = {n}コマ</b>（24fpsで {sec}秒）",
+  "specOut": "出力 <b>{w}×{h}</b>／等倍に届くスキャン解像度は <b>{dpi} dpi</b>",
+  "specMP": "（A4全体で {mp} MP{heavy}）",
+  "specHeavy": " ／ <b>ブラウザには重すぎます</b>",
+  "noImages": "画像が見つかりません。",
+  "loading": "読み込み中… {name}",
+  "cantRead": "{name} を読めませんでした。",
+  "wrongFmt": "トンボの間隔がこの規格の用紙と合いません。「{f}」の用紙ではありませんか。",
+  "loadedNg": "{p}ページ読み込み。{ng}ページはトンボを検出できません（クリックで指定してください）。",
+  "loaded": "{p}ページ読み込み。トンボを検出しました。",
+  "detOk": "検出OK",
+  "manual": "手動指定",
+  "pickTL": "{name}：左上のトンボをクリック（1/3）",
+  "pickTR": "{name}：右上のトンボをクリック（2/3）",
+  "pickBL": "{name}：左下のトンボをクリック（3/3）",
+  "pickDone": "位置を設定しました。",
+  "noMarks": "{name} のトンボが未設定です。",
+  "cutting": "切り出し中… {p}ページ {s}/{n}",
+  "alignFail": "位置合わせに失敗しました。",
+  "cutDone": "{n}コマを切り出しました（うち白紙 {b}コマ）。使う範囲を指定してください。",
+  "rangeInfo": "{a}〜{b} の {n}コマ",
+  "rangeDrop": "（白紙 {d}コマを除いて {s}コマ）",
+  "rangeSec": " → {t}秒",
+  "noRecorder": "このブラウザは動画の書き出しに対応していません（Chrome推奨）。",
+  "noFrames": "書き出すコマがありません。範囲を確認してください。",
+  "recording": "書き出し中… {p}%（実時間で {t}秒）",
+  "recorded": "書き出しました（{n}フレーム / {ext}）。",
+  "chgOut": "出力サイズを変えました。もう一度「コマを切り出す」を押してください。",
+  "chgAspect": "画面比を変えました。もう一度「コマを切り出す」を押してください。",
+  "chgFmt": "規格を変えました。もう一度「コマを切り出す」を押してください。",
+  "chgPaper": "用紙サイズを変えました。もう一度「コマを切り出す」を押してください。"
+ },
+ "en": {
+  "note": "Makes a video from scans of Paper Film Generator sheets",
+  "toGen": "← Paper Film Generator",
+  "hScan": "1. Scans",
+  "hFilm": "2. Film format",
+  "hFinish": "3. Finishing",
+  "hRange": "4. Range",
+  "hVideo": "5. Video",
+  "preview": "Preview",
+  "paper": "Paper",
+  "film": "Film",
+  "aspect": "Aspect",
+  "mode": "Color",
+  "white": "White level",
+  "inset": "Inset",
+  "blank": "Blank frames",
+  "outsize": "Output size",
+  "fps": "Frame rate",
+  "hold": "Hold",
+  "loop": "Repeat",
+  "order": "Reading order",
+  "setIn": "Set IN here",
+  "setOut": "Set OUT here",
+  "build": "Cut out frames",
+  "rec": "Export video",
+  "optRaw": "As scanned (no correction, recommended)",
+  "optPaper": "Even out the paper white only",
+  "optBw": "Threshold (black & white line art)",
+  "optSkip": "Skip blank frames in range",
+  "optKeep": "Keep blank frames",
+  "opt1080": "Height 1080 (HD)",
+  "opt1440": "Height 1440",
+  "opt2160": "Height 2160 (4K)",
+  "hold1": "On ones",
+  "hold2": "On twos",
+  "hold3": "On threes",
+  "loop1": "Once",
+  "loop2": "2 times",
+  "loop4": "4 times",
+  "loop8": "8 times",
+  "optCol": "Vertical (top to bottom, column by column)",
+  "optRow": "Horizontal (left to right, row by row)",
+  "play": "▶ Play",
+  "help1": "Scan the whole sheet, including the registration marks in the corners.",
+  "help2": "If the marks cannot be found, click the image to set them in the order top-left → top-right → bottom-left.",
+  "help3": "The scan resolution you need is shown in the specs above. Narrower film needs a higher dpi.",
+  "help4": "A4 at 1200 dpi is about 139 MP; beyond that the browser may crash. For 1600 dpi or more, cut the sheet into columns and scan them separately.",
+  "help5": "If you paint in color, scan in color (or full-color photo) mode and set Color to “As scanned”.",
+  "appTitle": "Scan → Video",
+  "dropHtml": "<strong>Drop scans</strong>\n      A4 at 600 dpi in color recommended<br>Multiple pages are joined in file-name order",
+  "custom": "Custom",
+  "stop": "■ Stop",
+  "specFrame": " / frame {w} × {h} mm",
+  "specRatio": " (image {r}:1{rot})",
+  "specRot": ", horizontal feed",
+  "specLayout": "<b>{c} columns × {r} rows = {n} frames</b> ({sec} s at 24 fps)",
+  "specOut": "Output <b>{w}×{h}</b> / scan resolution for 1:1 pixels: <b>{dpi} dpi</b>",
+  "specMP": " ({mp} MP for a full A4{heavy})",
+  "specHeavy": " / <b>too heavy for the browser</b>",
+  "noImages": "No images found.",
+  "loading": "Loading… {name}",
+  "cantRead": "Could not read {name}.",
+  "wrongFmt": "The mark spacing does not match this format. Is this a “{f}” sheet?",
+  "loadedNg": "Loaded {p} pages. Marks not found on {ng} pages (click to set them).",
+  "loaded": "Loaded {p} pages. Marks found.",
+  "detOk": "Found",
+  "manual": "Set by hand",
+  "pickTL": "{name}: click the top-left mark (1/3)",
+  "pickTR": "{name}: click the top-right mark (2/3)",
+  "pickBL": "{name}: click the bottom-left mark (3/3)",
+  "pickDone": "Position set.",
+  "noMarks": "Marks are not set for {name}.",
+  "cutting": "Cutting… page {p}, {s}/{n}",
+  "alignFail": "Alignment failed.",
+  "cutDone": "Cut out {n} frames ({b} blank). Now set the range to use.",
+  "rangeInfo": "{a}–{b}: {n} frames",
+  "rangeDrop": " ({s} after skipping {d} blank)",
+  "rangeSec": " → {t} s",
+  "noRecorder": "This browser cannot export video (Chrome recommended).",
+  "noFrames": "No frames to export. Check the range.",
+  "recording": "Exporting… {p}% (takes {t} s in real time)",
+  "recorded": "Exported ({n} frames / {ext}).",
+  "chgOut": "Output size changed. Press “Cut out frames” again.",
+  "chgAspect": "Aspect changed. Press “Cut out frames” again.",
+  "chgFmt": "Format changed. Press “Cut out frames” again.",
+  "chgPaper": "Paper size changed. Press “Cut out frames” again.",
+  "fmt_r8": "Regular 8 (Double 8)",
+  "fmt_s8": "Super 8",
+  "fmt_r16": "16mm Standard (double perf)",
+  "fmt_s16": "Super 16",
+  "fmt_ac35": "35mm Academy (4-perf)",
+  "fmt_fa35": "35mm Full Aperture / Super 35",
+  "fmt_sc35": "35mm CinemaScope (2× anamorphic)",
+  "fmt_vi35": "35mm Flat 1.85 (projection mask)",
+  "fmt_tc35": "35mm Techniscope (2-perf)",
+  "fmt_vv35": "VistaVision (8-perf horizontal)",
+  "fmt_td70": "70mm 5-perf (Todd-AO)",
+  "fmt_im70": "IMAX 15/70 (15-perf horizontal)",
+  "fmt_c45": "Custom 45mm",
+  "fmt_c50": "Custom 50mm"
+ },
+ "ko": {
+  "note": "페이퍼 필름 제너레이터 용지를 스캔한 이미지로 동영상을 만듭니다",
+  "toGen": "← 페이퍼 필름 제너레이터",
+  "hScan": "1. 스캔 이미지",
+  "hFilm": "2. 필름 규격",
+  "hFinish": "3. 마무리",
+  "hRange": "4. 사용 범위",
+  "hVideo": "5. 동영상",
+  "preview": "미리보기",
+  "paper": "용지",
+  "film": "필름",
+  "aspect": "화면비",
+  "mode": "색 처리",
+  "white": "화이트 레벨",
+  "inset": "안쪽 여백",
+  "blank": "빈 프레임",
+  "outsize": "출력 크기",
+  "fps": "프레임 레이트",
+  "hold": "프레임 홀드",
+  "loop": "반복",
+  "order": "읽는 순서",
+  "setIn": "여기를 IN",
+  "setOut": "여기를 OUT",
+  "build": "프레임 잘라내기",
+  "rec": "동영상 출력",
+  "optRaw": "그대로 (보정 없음, 권장)",
+  "optPaper": "종이의 흰색만 맞추기",
+  "optBw": "이진화 (흑백 선화)",
+  "optSkip": "범위 안의 빈 프레임은 건너뛰기",
+  "optKeep": "빈 프레임도 사용",
+  "opt1080": "높이 1080 (HD 상당)",
+  "opt1440": "높이 1440",
+  "opt2160": "높이 2160 (4K 상당)",
+  "hold1": "1프레임 홀드",
+  "hold2": "2프레임 홀드",
+  "hold3": "3프레임 홀드",
+  "loop1": "1회",
+  "loop2": "2회",
+  "loop4": "4회",
+  "loop8": "8회",
+  "optCol": "세로 (열마다 위에서 아래로)",
+  "optRow": "가로 (행마다 왼쪽에서 오른쪽으로)",
+  "play": "▶ 재생",
+  "help1": "용지 전체(모서리의 맞춤 표시 포함)가 들어가도록 스캔하세요.",
+  "help2": "맞춤 표시를 읽지 못하면 이미지를 클릭해 왼쪽 위 → 오른쪽 위 → 왼쪽 아래 순서로 지정할 수 있습니다.",
+  "help3": "필요한 스캔 해상도는 위의 사양에 표시됩니다. 폭이 좁을수록 높은 dpi가 필요합니다.",
+  "help4": "A4를 1200dpi로 스캔하면 약 139MP입니다. 이를 넘으면 브라우저가 멈출 수 있습니다. 1600dpi 이상으로 스캔하려면 열마다 잘라서 따로 스캔하세요.",
+  "help5": "직접 색을 칠한 경우 컬러(또는 풀컬러 사진) 모드로 스캔하고, 색 처리는 “그대로”로 하세요.",
+  "appTitle": "스캔 → 동영상",
+  "dropHtml": "<strong>스캔 이미지를 드롭</strong>\n      A4를 600dpi·컬러로 권장<br>여러 페이지는 파일 이름순으로 이어집니다",
+  "custom": "자작",
+  "stop": "■ 정지",
+  "specFrame": " / 프레임 {w} × {h} mm",
+  "specRatio": " (영상 {r}:1{rot})",
+  "specRot": ", 가로 주행",
+  "specLayout": "<b>{c}열 × {r}단 = {n}프레임</b> (24fps로 {sec}초)",
+  "specOut": "출력 <b>{w}×{h}</b> / 등배에 필요한 스캔 해상도 <b>{dpi} dpi</b>",
+  "specMP": " (A4 전체 {mp} MP{heavy})",
+  "specHeavy": " / <b>브라우저에는 너무 무겁습니다</b>",
+  "noImages": "이미지를 찾을 수 없습니다.",
+  "loading": "불러오는 중… {name}",
+  "cantRead": "{name}을(를) 읽지 못했습니다.",
+  "wrongFmt": "맞춤 표시 간격이 이 규격의 용지와 맞지 않습니다. “{f}” 용지가 아닌가요?",
+  "loadedNg": "{p}페이지를 불러왔습니다. {ng}페이지는 맞춤 표시를 찾지 못했습니다 (클릭해서 지정하세요).",
+  "loaded": "{p}페이지를 불러왔습니다. 맞춤 표시를 찾았습니다.",
+  "detOk": "검출 OK",
+  "manual": "수동 지정",
+  "pickTL": "{name}: 왼쪽 위 맞춤 표시를 클릭 (1/3)",
+  "pickTR": "{name}: 오른쪽 위 맞춤 표시를 클릭 (2/3)",
+  "pickBL": "{name}: 왼쪽 아래 맞춤 표시를 클릭 (3/3)",
+  "pickDone": "위치를 설정했습니다.",
+  "noMarks": "{name}의 맞춤 표시가 설정되지 않았습니다.",
+  "cutting": "잘라내는 중… {p}페이지 {s}/{n}",
+  "alignFail": "위치 맞춤에 실패했습니다.",
+  "cutDone": "{n}프레임을 잘라냈습니다 (빈 프레임 {b}개). 사용할 범위를 지정하세요.",
+  "rangeInfo": "{a}~{b}의 {n}프레임",
+  "rangeDrop": " (빈 프레임 {d}개를 빼고 {s}프레임)",
+  "rangeSec": " → {t}초",
+  "noRecorder": "이 브라우저는 동영상 출력을 지원하지 않습니다 (Chrome 권장).",
+  "noFrames": "출력할 프레임이 없습니다. 범위를 확인하세요.",
+  "recording": "출력 중… {p}% (실제 시간으로 {t}초)",
+  "recorded": "출력했습니다 ({n}프레임 / {ext}).",
+  "chgOut": "출력 크기를 바꿨습니다. “프레임 잘라내기”를 다시 누르세요.",
+  "chgAspect": "화면비를 바꿨습니다. “프레임 잘라내기”를 다시 누르세요.",
+  "chgFmt": "규격을 바꿨습니다. “프레임 잘라내기”를 다시 누르세요.",
+  "chgPaper": "용지 크기를 바꿨습니다. “프레임 잘라내기”를 다시 누르세요.",
+  "fmt_r8": "레귤러 8 (더블 8)",
+  "fmt_s8": "슈퍼 8",
+  "fmt_r16": "16mm 표준 (양쪽 퍼포)",
+  "fmt_s16": "슈퍼 16",
+  "fmt_ac35": "35mm 아카데미 (4퍼포)",
+  "fmt_fa35": "35mm 풀 애퍼처 / 슈퍼 35",
+  "fmt_sc35": "35mm 시네마스코프 (2배 아나모픽)",
+  "fmt_vi35": "35mm 비스타 1.85 (영사 마스크)",
+  "fmt_tc35": "35mm 테크니스코프 (2퍼포)",
+  "fmt_vv35": "비스타비전 (8퍼포 가로 주행)",
+  "fmt_td70": "70mm 5퍼포 (Todd-AO)",
+  "fmt_im70": "IMAX 15/70 (15퍼포 가로 주행)",
+  "fmt_c45": "자작 45mm",
+  "fmt_c50": "자작 50mm"
+ }
+};
+let LANG = 'ja';
+function tr(k, p){
+  let s = (I18N[LANG] || {})[k] ?? I18N.ja[k] ?? k;
+  if(p) s = s.replace(/\{(\w+)\}/g, (m, n) => n in p ? p[n] : m);
+  return s;
+}
+const fmtLabel = f => LANG === 'ja' ? f.label : tr('fmt_' + f.key);
+function applyLang(lang){
+  LANG = I18N[lang] ? lang : 'ja';
+  document.documentElement.lang = LANG;
+  document.title = tr('appTitle');
+  document.querySelectorAll('[data-i18n]').forEach(e => e.textContent = tr(e.dataset.i18n));
+  document.querySelectorAll('[data-i18n-html]').forEach(e => e.innerHTML = tr(e.dataset.i18nHtml));
+  document.getElementById('lang').value = LANG;
+  try{ localStorage.setItem('pfg:lang', LANG); }catch(e){}
+}
+function initialLang(){
+  const q = new URLSearchParams(location.search).get('lang');
+  if(I18N[q]) return q;
+  try{ const s = localStorage.getItem('pfg:lang'); if(I18N[s]) return s; }catch(e){}
+  const n = (navigator.language || 'ja').slice(0, 2);
+  return n === 'ja' || n === 'ko' ? n : 'en';
+}
+
 const PAPERS = {A5: [148, 210], A4: [210, 297], A3: [297, 420]};
 const PAGE = {w: 210, h: 297};
 const MIN_MX = 8.0, MIN_MY = 12.0;
@@ -399,11 +723,11 @@ function showSpec(){
   const need = Math.round(OUT_W * 25.4 / SP.capW);            // 等倍に必要なスキャン解像度
   const a4mp = (210 / 25.4 * need) * (297 / 25.4 * need) / 1e6;
   $('spec').innerHTML =
-    `<b>${SP.label}</b>／コマ ${SP.capW.toFixed(2)} × ${SP.capH.toFixed(2)} mm` +
-    `（映像 ${SP.ratio.toFixed(2)}:1${SP.rot ? '・横送り' : ''}）<br>` +
-    `<b>${SP.cols}列 × ${SP.rows}段 = ${SP.perPage}コマ</b>（24fpsで ${(SP.perPage / 24).toFixed(2)}秒）<br>` +
-    `出力 <b>${OUT_W}×${OUT_H}</b>／等倍に届くスキャン解像度は <b>${need} dpi</b>` +
-    `（A4全体で ${a4mp.toFixed(0)} MP` + (a4mp > 150 ? ' ／ <b>ブラウザには重すぎます</b>' : '') + '）';
+    `<b>${fmtLabel(FMT[SP.key])}</b>` + tr('specFrame', {w: SP.capW.toFixed(2), h: SP.capH.toFixed(2)}) +
+    tr('specRatio', {r: SP.ratio.toFixed(2), rot: SP.rot ? tr('specRot') : ''}) + '<br>' +
+    tr('specLayout', {c: SP.cols, r: SP.rows, n: SP.perPage, sec: (SP.perPage / 24).toFixed(2)}) + '<br>' +
+    tr('specOut', {w: OUT_W, h: OUT_H, dpi: need}) +
+    tr('specMP', {mp: a4mp.toFixed(0), heavy: a4mp > 150 ? tr('specHeavy') : ''});
 }
 /* トンボの縦横比から用紙の規格を検算する（横の間隔は全規格 186mm 固定） */
 function fmtError(m, key){
@@ -421,14 +745,14 @@ let bmpCache = new Map();
 async function addFiles(files){
   const list = [...files].filter(f => /^image\//.test(f.type))
     .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
-  if(!list.length){ status('画像が見つかりません。', 'ng'); return; }
+  if(!list.length){ status(tr('noImages'), 'ng'); return; }
   for(const f of list){
-    status(`読み込み中… ${f.name}`);
+    status(tr('loading', {name: f.name}));
     try{
       const bmp = await createImageBitmap(f);
       const marks = detectMarks(bmp);
       pages.push({name: f.name, bmp, marks});
-    }catch(e){ status(`${f.name} を読めませんでした。`, 'ng'); }
+    }catch(e){ status(tr('cantRead', {name: f.name}), 'ng'); }
   }
   renderPages();
   const ok = pages.find(p => p.marks);
@@ -438,14 +762,13 @@ async function addFiles(files){
       let best = null;
       for(const f of FORMATS){ const e = fmtError(ok.marks, f.key); if(!best || e < best.e) best = {f, e}; }
       if(best && best.f.key !== SP.key && best.e < 1.5){
-        status(`トンボの間隔がこの規格の用紙と合いません。「${best.f.label}」の用紙ではありませんか。`, 'warn');
+        status(tr('wrongFmt', {f: fmtLabel(best.f)}), 'warn');
         await sleep(1500);
       }
     }
   }
   const ng = pages.filter(p => !p.marks).length;
-  status(ng ? `${pages.length}ページ読み込み。${ng}ページはトンボを検出できません（クリックで指定してください）。`
-            : `${pages.length}ページ読み込み。トンボを検出しました。`, ng ? 'warn' : '');
+  status(ng ? tr('loadedNg', {p: pages.length, ng}) : tr('loaded', {p: pages.length}), ng ? 'warn' : '');
   $('build').disabled = pages.length === 0;
 }
 function renderPages(){
@@ -461,7 +784,7 @@ function renderPages(){
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = p.name; el.appendChild(nm);
     const st = document.createElement('span');
     st.className = 'st ' + (p.marks ? 'ok' : 'ng');
-    st.textContent = p.marks ? '検出OK' : '手動指定';
+    st.textContent = tr(p.marks ? 'detOk' : 'manual');
     st.style.cursor = 'pointer'; st.onclick = () => manualPick(i);
     el.appendChild(st);
     const x = document.createElement('button'); x.className = 'ghost'; x.textContent = '×';
@@ -481,7 +804,7 @@ function manualPick(i){
   c.drawImage(p.bmp, 0, 0, cv.width, cv.height);
   picking.scale = s;
   box.style.display = 'block';
-  $('pickmsg').textContent = `${p.name}：左上のトンボをクリック（1/3）`;
+  $('pickmsg').textContent = tr('pickTL', {name: p.name});
   cv.onclick = e => {
     const r = cv.getBoundingClientRect();
     const x = (e.clientX - r.left) * (cv.width / r.width) / picking.scale;
@@ -493,9 +816,9 @@ function manualPick(i){
       const [TL, TR, BL] = picking.pts;
       pages[picking.i].marks = {TL, TR, BL};
       box.style.display = 'none'; picking = null;
-      renderPages(); status('位置を設定しました。');
+      renderPages(); status(tr('pickDone'));
     }else{
-      $('pickmsg').textContent = `${p.name}：${picking.pts.length === 1 ? '右上' : '左下'}のトンボをクリック（${picking.pts.length + 1}/3）`;
+      $('pickmsg').textContent = tr(picking.pts.length === 1 ? 'pickTR' : 'pickBL', {name: p.name});
     }
   };
 }
@@ -519,10 +842,10 @@ async function buildFrames(){
   const tc = tcv.getContext('2d');
   for(let pi = 0; pi < pages.length; pi++){
     const p = pages[pi];
-    if(!p.marks){ status(`${p.name} のトンボが未設定です。`, 'ng'); return; }
+    if(!p.marks){ status(tr('noMarks', {name: p.name}), 'ng'); return; }
     const mm2px = solveAffine(p.marks);
     for(let slot = 0; slot < SP.perPage; slot++){
-      status(`切り出し中… ${pi + 1}ページ ${slot + 1}/${SP.perPage}`);
+      status(tr('cutting', {p: pi + 1, s: slot + 1, n: SP.perPage}));
       const f = capMM(slot, $('order').value);
       const dx = f.w * ins, dy = f.h * ins;
       const x0 = f.x + dx, y0 = f.y + dy, w = f.w - dx * 2, h = f.h - dy * 2;
@@ -534,7 +857,7 @@ async function buildFrames(){
       const a0 = (p10[0] - p00[0]) / OUT_W, a1 = (p01[0] - p00[0]) / OUT_H, a2 = p00[0];
       const b0 = (p10[1] - p00[1]) / OUT_W, b1 = (p01[1] - p00[1]) / OUT_H, b2 = p00[1];
       const det = a0 * b1 - a1 * b0;
-      if(!det){ status('位置合わせに失敗しました。', 'ng'); return; }
+      if(!det){ status(tr('alignFail'), 'ng'); return; }
       // 逆行列（入力→出力）
       const i0 = b1 / det, i1 = -a1 / det, i2 = (a1 * b2 - a2 * b1) / det;
       const j0 = -b0 / det, j1 = a0 / det, j2 = (a2 * b0 - a0 * b2) / det;
@@ -578,7 +901,7 @@ async function buildFrames(){
   $('inF').max = frames.length; $('outF').max = frames.length;
   renderStrip();
   const nb = frames.filter(f => f.blank).length;
-  status(`${frames.length}コマを切り出しました（うち白紙 ${nb}コマ）。使う範囲を指定してください。`);
+  status(tr('cutDone', {n: frames.length, b: nb}));
   showFrame(0);
 }
 
@@ -623,8 +946,8 @@ function markStrip(){
   const fps = +$('fps').value, hold = +$('hold').value, loop = +$('loop').value;
   const dropped = (b - a + 1) - sel.length;
   $('rangeInfo').textContent =
-    `${a}〜${b} の ${b - a + 1}コマ` + (dropped ? `（白紙 ${dropped}コマを除いて ${sel.length}コマ）` : '') +
-    ` → ${(sel.length * hold * loop / fps).toFixed(2)}秒`;
+    tr('rangeInfo', {a, b, n: b - a + 1}) + (dropped ? tr('rangeDrop', {d: dropped, s: sel.length}) : '') +
+    tr('rangeSec', {t: (sel.length * hold * loop / fps).toFixed(2)});
 }
 
 /* ===== 表示・再生 ===== */
@@ -645,11 +968,11 @@ async function showFrame(i){
 }
 let playing = false;
 async function play(){
-  if(playing){ playing = false; $('play').textContent = '▶ 再生'; return; }
-  playing = true; $('play').textContent = '■ 停止';
+  if(playing){ playing = false; $('play').textContent = tr('play'); return; }
+  playing = true; $('play').textContent = tr('stop');
   const fps = +$('fps').value, hold = +$('hold').value;
   const sel = selection();
-  if(!sel.length){ playing = false; $('play').textContent = '▶ 再生'; return; }
+  if(!sel.length){ playing = false; $('play').textContent = tr('play'); return; }
   let k = Math.max(0, sel.indexOf(+$('seek').value));
   const dt = 1000 / fps * hold;
   let t = performance.now();
@@ -670,11 +993,11 @@ function pickMime(){
 }
 async function record(){
   const mime = pickMime();
-  if(!mime){ status('このブラウザは動画の書き出しに対応していません（Chrome推奨）。', 'ng'); return; }
-  playing = false; $('play').textContent = '▶ 再生';
+  if(!mime){ status(tr('noRecorder'), 'ng'); return; }
+  playing = false; $('play').textContent = tr('play');
   const fps = +$('fps').value, hold = +$('hold').value, loop = +$('loop').value;
   const sel = selection();
-  if(!sel.length){ status('書き出すコマがありません。範囲を確認してください。', 'ng'); return; }
+  if(!sel.length){ status(tr('noFrames'), 'ng'); return; }
   const stream = view.captureStream(0);
   const track = stream.getVideoTracks()[0];
   const rec = new MediaRecorder(stream, {mimeType: mime, videoBitsPerSecond: Math.round(16e6 * (OUT_W * OUT_H) / (1920 * 1080))});
@@ -690,7 +1013,7 @@ async function record(){
     const b = await getBmp(idx);
     vctx.drawImage(b, 0, 0, OUT_W, OUT_H);
     track.requestFrame();
-    if(n % 6 === 0) status(`書き出し中… ${Math.round(n / total * 100)}%（実時間で ${(total * dt / 1000).toFixed(1)}秒）`);
+    if(n % 6 === 0) status(tr('recording', {p: Math.round(n / total * 100), t: (total * dt / 1000).toFixed(1)}));
     await sleep(Math.max(0, t0 + (n + 1) * dt - performance.now()));
   }
   await sleep(dt * 2);
@@ -699,7 +1022,7 @@ async function record(){
   const url = URL.createObjectURL(new Blob(chunks, {type: mime}));
   const a = document.createElement('a'); a.href = url; a.download = `animation_${fps}fps.${ext}`; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 6000);
-  status(`書き出しました（${total}フレーム / ${ext.toUpperCase()}）。`);
+  status(tr('recorded', {n: total, ext: ext.toUpperCase()}));
 }
 
 /* ===== 操作 ===== */
@@ -718,19 +1041,20 @@ function resetFrames(msg){
   vctx.setTransform(1,0,0,1,0,0); vctx.fillStyle = '#fff'; vctx.fillRect(0, 0, OUT_W, OUT_H);
   showSpec(); status(msg);
 }
-$('outsize').onchange = () => { setOutSize(); resetFrames('出力サイズを変えました。もう一度「コマを切り出す」を押してください。'); };
+$('outsize').onchange = () => { setOutSize(); resetFrames(tr('chgOut')); };
 $('aspect').onchange = () => {
   ASPECT = parseFloat($('aspect').value);
   SP = layout($('fmt').value, ASPECT);
-  setOutSize(); resetFrames('画面比を変えました。もう一度「コマを切り出す」を押してください。');
+  setOutSize(); resetFrames(tr('chgAspect'));
 };
 function buildFormatMenu(){
-  const sel = $('fmt'); let gr = null, og = null;
+  const sel = $('fmt'), keep = sel.value || 'ac35'; let gr = null, og = null;
+  sel.innerHTML = '';
   for(const f of FORMATS){
-    if(f.group !== gr){ gr = f.group; og = document.createElement('optgroup'); og.label = gr; sel.appendChild(og); }
-    const o = document.createElement('option'); o.value = f.key; o.textContent = f.label; og.appendChild(o);
+    if(f.group !== gr){ gr = f.group; og = document.createElement('optgroup'); og.label = gr === '自作' ? tr('custom') : gr; sel.appendChild(og); }
+    const o = document.createElement('option'); o.value = f.key; o.textContent = fmtLabel(f); og.appendChild(o);
   }
-  sel.value = 'ac35';
+  sel.value = keep;
 }
 function reLayout(msg){
   const ps = PAPERS[$('paper').value] || PAPERS.A4;
@@ -740,8 +1064,8 @@ function reLayout(msg){
   setOutSize();
   resetFrames(msg);
 }
-$('fmt').onchange = () => reLayout('規格を変えました。もう一度「コマを切り出す」を押してください。');
-$('paper').onchange = () => reLayout('用紙サイズを変えました。もう一度「コマを切り出す」を押してください。');
+$('fmt').onchange = () => reLayout(tr('chgFmt'));
+$('paper').onchange = () => reLayout(tr('chgPaper'));
 $('white').oninput = () => { $('wlv').textContent = $('white').value; };
 $('mode').onchange = () => { $('wrow').style.display = $('mode').value === 'raw' ? 'none' : 'flex'; };
 $('inset').oninput = () => { $('inv').textContent = (+$('inset').value / 10).toFixed(1) + '%'; };
@@ -755,6 +1079,13 @@ $('setOut').onclick = () => { $('outF').value = +$('seek').value + 1; markStrip(
 $('play').onclick = play;
 $('build').onclick = () => { $('build').disabled = true; buildFrames().finally(() => $('build').disabled = false); };
 $('rec').onclick = () => { $('rec').disabled = true; record().finally(() => $('rec').disabled = false); };
+$('lang').onchange = () => {
+  applyLang($('lang').value); buildFormatMenu(); showSpec(); renderPages();
+  $('play').textContent = tr(playing ? 'stop' : 'play');
+  if(frames.length) markStrip();
+  status('');
+};
+applyLang(initialLang());
 buildFormatMenu();
 setOutSize();
 vctx.fillStyle = '#fff'; vctx.fillRect(0, 0, OUT_W, OUT_H);
