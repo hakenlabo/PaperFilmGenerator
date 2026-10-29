@@ -12,7 +12,9 @@
   header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
   h1{font-size:18px;margin:0;letter-spacing:.04em}
   header .note{color:var(--sub);font-size:12px}
-  header .lang{margin-left:auto;font-size:12px;padding:3px 6px}
+  header .xlink{margin-left:auto;font-size:12px;color:var(--blue);text-decoration:none}
+  header .xlink:hover{text-decoration:underline}
+  header .lang{flex:none;width:auto;font-size:12px;padding:3px 6px}
   :lang(ko) body{font-family:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",Arial,sans-serif}
   .cols{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start}
   @media (max-width:900px){.cols{grid-template-columns:1fr}}
@@ -55,6 +57,7 @@
 <header>
   <h1 data-i18n="appTitle">ペーパーフィルムジェネレーター</h1>
   <span class="note" data-i18n="note">実際のフィルム規格の寸法 / スキャン用トンボ付き</span>
+  <a class="xlink" href="scan.html" data-i18n="toScan">スキャン → 動画アプリ</a>
   <select id="lang" class="lang" aria-label="Language">
     <option value="ja">日本語</option>
     <option value="en">English</option>
@@ -269,6 +272,7 @@
    画面の文字は data-i18n / data-i18n-html のキーで差し替える。日本語にないキーはそのまま表示 */
 const I18N = {
  "ja": {
+  "toScan": "スキャン → 動画アプリ",
   "note": "実際のフィルム規格の寸法 / スキャン用トンボ付き",
   "hPaper": "1. 用紙とフィルム",
   "hUnder": "2. 下絵（任意）",
@@ -358,6 +362,7 @@ const I18N = {
   "failed": "失敗："
  },
  "en": {
+  "toScan": "Scan → video app",
   "note": "Real film-format dimensions / registration marks for scanning",
   "hPaper": "1. Paper & film",
   "hUnder": "2. Underlay (optional)",
@@ -461,6 +466,7 @@ const I18N = {
   "fmt_c50": "Custom 50mm"
  },
  "ko": {
+  "toScan": "스캔 → 동영상 앱",
   "note": "실제 필름 규격 치수 / 스캔용 맞춤 표시 포함",
   "hPaper": "1. 용지와 필름",
   "hUnder": "2. 밑그림 (선택)",

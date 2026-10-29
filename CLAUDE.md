@@ -12,3 +12,7 @@
   ローカル変数に `t` が多いので翻訳関数は `tr`。選んだ言語は localStorage `pfg:lang`、URL の `?lang=` が優先。
   PDF に入る文字（規格ラベル・コマ番号）は Helvetica なので ASCII のみ、言語に関係なく同じ。
 - アプリ名は「ペーパーフィルムジェネレーター」（2026-10-29 に「作画用紙ジェネレーター」から改名）。
+- `scan.html`：スキャン → 動画（2026-10-29 公開）。元は Drive の `PaperFilm_scan_to_video_0907.html`。日本語のみ。
+  フィルム規格表（FORMATS）と layout() を index.html から書き写して持っている（共通化はまだ）。
+  **規格表を直すときは index.html と scan.html の両方を直す**。トンボ検出は 0911 版の列ごとの小さい印があっても動くことを確認済み。
+- 2つのページは見出しの横のリンクで行き来できる（index.html → scan.html、scan.html → ./）。

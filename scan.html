@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>スキャン → 動画</title>
+<style>
+  :root{--paper:#fff;--desk:#e8ecef;--ink:#16191c;--sub:#5d666e;--line:#c9d1d8;--blue:#2f6fb5;--blue-soft:#dceaf8;--amber:#c98a1e;--ok:#2e8b57}
+  *{box-sizing:border-box} html,body{margin:0;padding:0}
+  body{background:var(--desk);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Arial,sans-serif;font-size:14px;line-height:1.6}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 16px 60px}
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  h1{font-size:18px;margin:0;letter-spacing:.04em}
+  header .note{color:var(--sub);font-size:12px}
+  header .xlink{margin-left:auto;font-size:12px;color:var(--blue);text-decoration:none}
+  header .xlink:hover{text-decoration:underline}
+  .cols{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start}
+  @media (max-width:900px){.cols{grid-template-columns:1fr}}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px}
+  .panel h2{font-size:12px;letter-spacing:.12em;color:var(--sub);margin:0 0 10px;font-weight:600}
+  .drop{border:2px dashed var(--line);border-radius:6px;padding:20px 12px;text-align:center;color:var(--sub);cursor:pointer;background:#fbfcfd}
+  .drop:hover,.drop.hot{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+  .drop strong{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+  .row{display:flex;align-items:center;gap:8px;margin:10px 0}
+  .row label{min-width:76px;color:var(--sub);font-size:12px}
+  select,input[type=number],input[type=text]{font:inherit;font-size:13px;padding:5px 7px;border:1px solid var(--line);border-radius:4px;background:#fff}
+  select{flex:1;min-width:0}
+  input[type=range]{width:100%;accent-color:var(--blue)}
+  .mono{font-family:Menlo,Consolas,monospace}
+  button.primary{width:100%;font:inherit;font-size:15px;font-weight:600;padding:11px;margin-top:6px;background:var(--ink);color:#fff;border:0;border-radius:5px;cursor:pointer}
+  button.primary:disabled{background:#aab3ba;cursor:not-allowed}
+  button.primary:hover:not(:disabled){background:var(--blue)}
+  .ghost{font:inherit;font-size:12px;padding:5px 10px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;color:var(--sub)}
+  .ghost:hover{border-color:var(--blue);color:var(--blue)}
+  #pages .pg{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid #eef1f4;font-size:11px;color:var(--sub)}
+  #pages canvas{width:44px;height:62px;border:1px solid var(--line);background:#fff}
+  #pages .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #pages .st{font-size:11px;white-space:nowrap}
+  .st.ok{color:var(--ok)} .st.ng{color:#c0392b}
+  .stage{background:#111;border-radius:5px;padding:10px;text-align:center}
+  #view{width:100%;height:auto;background:#fff;display:block;border-radius:3px}
+  .transport{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .transport .mono{font-size:12px;color:var(--sub);min-width:74px;text-align:center}
+  #seek{flex:1}
+  .status{font-size:12px;color:var(--sub);margin-top:8px;min-height:1.6em}
+  .status.warn{color:var(--amber)} .status.ng{color:#c0392b}
+  .help{font-size:11.5px;color:var(--sub);margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .help li{margin:3px 0}
+  .spec{font-size:11.5px;color:var(--sub);margin-top:8px;padding:9px 10px;background:#f6f8fa;border-radius:4px;line-height:1.7}
+  .spec b{color:var(--ink);font-weight:600}
+  #strip{display:flex;gap:3px;overflow-x:auto;padding:6px 2px;margin-top:8px;background:#f2f4f6;border-radius:4px;min-height:56px}
+  #strip .fr{position:relative;flex:none;cursor:pointer;border:2px solid transparent;border-radius:2px;line-height:0}
+  #strip .fr img{width:64px;height:36px;display:block;background:#fff}
+  #strip .fr span{position:absolute;left:1px;bottom:1px;font:9px Menlo,monospace;color:#fff;background:rgba(0,0,0,.55);padding:0 2px;border-radius:2px}
+  #strip .fr.sel{border-color:var(--blue)}
+  #strip .fr.out{opacity:.28}
+  #strip .fr.blank img{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#eceff2 4px,#eceff2 8px)}
+  #strip .fr.cur{border-color:#c0392b}
+  .pick{position:relative;margin-top:10px;display:none}
+  .pick canvas{width:100%;border:1px solid var(--line);cursor:crosshair;background:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>スキャン → 動画</h1>
+  <span class="note">ペーパーフィルムジェネレーターの用紙をスキャンした画像から動画をつくります</span>
+  <a class="xlink" href="./">← ペーパーフィルムジェネレーター</a>
+</header>
+
+<div class="cols">
+  <div class="panel">
+    <h2>1. スキャン画像</h2>
+    <div class="drop" id="drop">
+      <strong>スキャンをドロップ</strong>
+      A4を600dpi・カラー推奨<br>複数ページはファイル名順につながります
+    </div>
+    <div id="pages"></div>
+
+    <h2 style="margin-top:18px">2. フィルム幅</h2>
+    <div class="row">
+      <label>用紙</label>
+      <select id="paper">
+        <option value="A5">A5</option>
+        <option value="A4" selected>A4</option>
+        <option value="A3">A3</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>フィルム</label>
+      <select id="fmt"></select>
+    </div>
+    <div class="row" id="aspectRow" style="display:none">
+      <label>画面比</label>
+      <select id="aspect">
+        <option value="1.7778" selected>16:9</option>
+        <option value="1.3333">4:3</option>
+      </select>
+    </div>
+    <div class="spec" id="spec"></div>
+
+    <h2 style="margin-top:18px">3. 仕上げ</h2>
+    <div class="row">
+      <label>色の処理</label>
+      <select id="mode">
+        <option value="raw" selected>そのまま（無補正・推奨）</option>
+        <option value="paper">紙の白だけ整える</option>
+        <option value="bw">2値化（モノクロ線画）</option>
+      </select>
+    </div>
+    <div class="row" id="wrow" style="display:none">
+      <label>白レベル</label>
+      <input type="range" id="white" min="150" max="255" value="238" style="flex:1">
+      <span class="mono" id="wlv" style="font-size:12px">238</span>
+    </div>
+    <div class="row">
+      <label>枠の内側</label>
+      <input type="range" id="inset" min="0" max="30" value="10" style="flex:1">
+      <span class="mono" id="inv" style="font-size:12px">1.0%</span>
+    </div>
+
+    <h2 style="margin-top:18px">4. 使う範囲</h2>
+    <div class="row">
+      <label>IN / OUT</label>
+      <input type="number" id="inF" value="1" min="1" style="width:66px">
+      <span style="color:var(--sub)">〜</span>
+      <input type="number" id="outF" value="1" min="1" style="width:66px">
+      <button class="ghost" id="setIn">ここをIN</button>
+      <button class="ghost" id="setOut">ここをOUT</button>
+    </div>
+    <div class="row">
+      <label>白紙</label>
+      <select id="skip"><option value="1" selected>範囲内の白紙は飛ばす</option><option value="0">白紙も使う</option></select>
+    </div>
+    <div id="strip"></div>
+    <div class="mono" id="rangeInfo" style="font-size:12px;color:var(--sub);margin-top:6px"></div>
+
+    <h2 style="margin-top:18px">5. 動画</h2>
+    <div class="row">
+      <label>出力サイズ</label>
+      <select id="outsize">
+        <option value="1080" selected>高さ1080（HD相当）</option>
+        <option value="1440">高さ1440</option>
+        <option value="2160">高さ2160（4K相当）</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>フレームレート</label>
+      <select id="fps"><option value="24" selected>24 fps</option><option value="12">12 fps</option><option value="8">8 fps</option></select>
+    </div>
+    <div class="row">
+      <label>コマ打ち</label>
+      <select id="hold"><option value="1" selected>1コマ打ち</option><option value="2">2コマ打ち</option><option value="3">3コマ打ち</option></select>
+    </div>
+    <div class="row">
+      <label>繰り返し</label>
+      <select id="loop"><option value="1" selected>1回</option><option value="2">2回</option><option value="4">4回</option><option value="8">8回</option></select>
+    </div>
+    <div class="row">
+      <label>読み取り順</label>
+      <select id="order">
+        <option value="col" selected>縦（列ごとに上から下）</option>
+        <option value="row">横（行ごとに左から右）</option>
+      </select>
+    </div>
+    <button class="primary" id="build" disabled>コマを切り出す</button>
+    <button class="primary" id="rec" disabled style="background:#8b2f2f">動画を書き出す</button>
+    <div class="status" id="status"></div>
+
+    <div class="help">
+      <ul style="padding-left:1.1em;margin:0">
+        <li>スキャンは用紙全体（四隅のトンボを含む）が入るようにしてください。</li>
+        <li>トンボが読めないときは、画像をクリックして左上→右上→左下の順に指定できます。</li>
+        <li>必要なスキャン解像度は上の諸元に出ます。細い幅ほど高いdpiが要ります。</li>
+        <li>A4は1200dpiで約139MP。これを超えるとブラウザが落ちることがあります。1600dpi以上で撮りたいときは、列ごとに切って別々のスキャンにしてください。</li>
+        <li>色を直に塗る場合はカラー（またはフルカラー写真）モードでスキャンし、色の処理は「そのまま」で。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>プレビュー</h2>
+    <div class="stage"><canvas id="view" width="1920" height="1080"></canvas></div>
+    <div class="transport">
+      <button class="ghost" id="play">▶ 再生</button>
+      <input type="range" id="seek" min="0" max="0" value="0">
+      <span class="mono" id="pos">— / —</span>
+    </div>
+    <div class="pick" id="pick">
+      <div style="font-size:12px;color:var(--amber);margin-bottom:6px" id="pickmsg"></div>
+      <canvas id="pickcv"></canvas>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+/* =====================================================================
+   フィルム規格の実寸表（mm）— 作画用紙・スキャンアプリで共通
+   along  : フィルムの送り方向の画面寸法      across : フィルム幅方向の画面寸法
+   pitch  : 1コマ送り量        perf   : パーフォレーション
+   at     : 'line' コマ境界／'center' コマ中央／'span' コマ内に等間隔
+   rot    : 横送り（IMAX・VistaVision）。用紙の上では絵が90°倒れる
+   ===================================================================== */
+const MM = 72 / 25.4;
+const PAPERS = {A5: [148, 210], A4: [210, 297], A3: [297, 420]};
+const PAGE = {w: 210, h: 297};
+const MIN_MX = 8.0, MIN_MY = 12.0;
+
+const FORMATS = [
+  {key:'r8',   label:'レギュラー8（ダブル8）', group:'8mm',
+   film:7.975, pitch:3.81,   across:4.80,  along:3.50,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.90,per:1,sides:1,at:'line'}, left:2.95},
+  {key:'s8',   label:'スーパー8', group:'8mm',
+   film:7.975, pitch:4.234,  across:5.69,  along:4.22,
+   perf:{w:0.914,h:1.143,r:0.13,edge:0.51,per:1,sides:1,at:'center'}, left:1.47},
+
+  {key:'r16',  label:'16mm 標準（両側パーフ）', group:'16mm',
+   film:16.0,  pitch:7.62,   across:10.26, along:7.49,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.51,per:1,sides:2,at:'line'}, left:2.87},
+  {key:'s16',  label:'スーパー16', group:'16mm',
+   film:16.0,  pitch:7.62,   across:12.52, along:7.41,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.51,per:1,sides:1,at:'line'}, left:2.93},
+
+  {key:'ac35', label:'35mm アカデミー（4パーフ）', group:'35mm',
+   film:35.0,  pitch:19.05,  across:21.95, along:16.00,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:7.995},
+  {key:'fa35', label:'35mm フルアパーチャー／スーパー35', group:'35mm',
+   film:35.0,  pitch:19.05,  across:24.89, along:18.67,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:5.055},
+  {key:'sc35', label:'35mm シネマスコープ（アナモ2倍）', group:'35mm',
+   film:35.0,  pitch:19.05,  across:21.95, along:18.59,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:7.995, squeeze:2},
+  {key:'vi35', label:'35mm ビスタ 1.85（映写マスク）', group:'35mm',
+   film:35.0,  pitch:19.05,  across:20.96, along:11.33,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:8.49},
+  {key:'tc35', label:'35mm テクニスコープ（2パーフ）', group:'35mm',
+   film:35.0,  pitch:9.525,  across:21.95, along:9.47,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:2,sides:2,at:'span'}, left:7.995},
+  {key:'vv35', label:'ビスタビジョン（8パーフ横送り）', group:'35mm',
+   film:35.0,  pitch:38.10,  across:24.92, along:37.72, rot:true,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:8,sides:2,at:'span'}, left:5.04},
+
+  {key:'td70', label:'70mm 5パーフ（Todd-AO）', group:'65/70mm',
+   film:70.0,  pitch:23.8125,across:52.63, along:23.01,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:5,sides:2,at:'span'}, left:8.685},
+  {key:'im70', label:'IMAX 15/70（15パーフ横送り）', group:'65/70mm',
+   film:70.0,  pitch:71.4375,across:52.63, along:70.41, rot:true,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:15,sides:2,at:'span'}, left:8.685},
+
+  {key:'c45',  label:'自作 45mm', group:'自作', film:45.0, custom:true},
+  {key:'c50',  label:'自作 50mm', group:'自作', film:50.0, custom:true}
+];
+const FMT = Object.fromEntries(FORMATS.map(f => [f.key, f]));
+
+function layout(key, aspect){
+  const f = FMT[key] || FMT.c50;
+  let capW, capH, pitch, left, perf, rot = !!f.rot;
+  if(f.custom){
+    capW = Math.round(f.film * 0.8889 * 10) / 10;
+    capH = capW / (aspect || 16 / 9);
+    pitch = capH;
+    left = (f.film - capW) / 2;
+    const m = left;
+    perf = {w: Math.min(2.0, m * 0.77), h: Math.min(2.0, m * 0.77) * 0.7,
+            r: Math.min(2.0, m * 0.77) * 0.18, edge: (m - Math.min(2.0, m * 0.77)) / 2,
+            per: 4, sides: 2, at: 'span', ok: m >= 1.4};
+  }else{
+    capW = f.across; capH = f.along; pitch = f.pitch; left = f.left;
+    perf = Object.assign({ok: true}, f.perf);
+  }
+  const gutter = Math.max(4.0, f.film * 0.10);
+  const cols = Math.max(1, Math.floor((PAGE.w - 2 * MIN_MX + gutter) / (f.film + gutter)));
+  const rows = Math.max(1, Math.floor((PAGE.h - 2 * MIN_MY) / pitch));
+  const mX = (PAGE.w - (cols * f.film + (cols - 1) * gutter)) / 2;
+  const mY = (PAGE.h - rows * pitch) / 2;
+  const ratio = (rot ? f.along / f.across : capW / capH) * (f.squeeze || 1);   // 映像としての比率（アナモは伸長後）
+  return {
+    key, label: f.label, film: f.film, custom: !!f.custom, rot, squeeze: f.squeeze || 1,
+    capW, capH, pitch, left, perf, gutter, cols, rows, mX, mY, ratio,
+    colPitch: f.film + gutter, perPage: cols * rows,
+    numSize: Math.max(3.2, Math.min(6, gutter - 1.6)),
+    marks: {BL: [12, mY / 2], TL: [12, PAGE.h - mY / 2], TR: [PAGE.w - 12, PAGE.h - mY / 2]}
+  };
+}
+
+let SP = layout('ac35', 16 / 9);
+let ASPECT = 16 / 9;
+let OUT_W = 1920, OUT_H = 1080;
+function setOutSize(){
+  OUT_H = parseInt($('outsize').value, 10);
+  OUT_W = Math.round(OUT_H * SP.ratio / 2) * 2;
+  view.width = OUT_W; view.height = OUT_H;
+}
+const $ = id => document.getElementById(id);
+const status = (t, cls) => { $('status').textContent = t; $('status').className = 'status' + (cls ? ' ' + cls : ''); };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* コマ位置（mm・左下原点）。順番は列ごとに上から下 */
+function capMM(slot, order){
+  let col, rowTop;
+  if(order === 'row'){ rowTop = Math.floor(slot / SP.cols); col = slot % SP.cols; }
+  else { col = Math.floor(slot / SP.rows); rowTop = slot % SP.rows; }
+  return {
+    x: SP.mX + col * SP.colPitch + SP.left,
+    y: SP.mY + (SP.rows - 1 - rowTop) * SP.pitch,
+    w: SP.capW, h: SP.capH
+  };
+}
+
+/* ===== トンボ検出 ===== */
+function grayOf(bmp, sx, sy, sw, sh, dw, dh){
+  const cv = document.createElement('canvas'); cv.width = dw; cv.height = dh;
+  const c = cv.getContext('2d', {willReadFrequently: true});
+  c.drawImage(bmp, sx, sy, sw, sh, 0, 0, dw, dh);
+  const d = c.getImageData(0, 0, dw, dh).data;
+  const g = new Uint8Array(dw * dh);
+  for(let i = 0, p = 0; i < g.length; i++, p += 4) g[i] = (d[p] * 299 + d[p + 1] * 587 + d[p + 2] * 114) / 1000;
+  return g;
+}
+function threshold(g){
+  const hist = new Uint32Array(256); for(const v of g) hist[v]++;
+  let mn = 0; while(mn < 255 && hist[mn] < g.length * 0.0002) mn++;
+  let acc = 0, p95 = 255;
+  for(let v = 0; v < 256; v++){ acc += hist[v]; if(acc > g.length * 0.95){ p95 = v; break; } }
+  return mn + (p95 - mn) * 0.45;
+}
+function findBlobs(g, w, h, thr){
+  const lab = new Int32Array(w * h).fill(-1), blobs = [], stack = new Int32Array(w * h);
+  for(let i = 0; i < g.length; i++){
+    if(g[i] >= thr || lab[i] !== -1) continue;
+    const id = blobs.length; let sp = 0; stack[sp++] = i; lab[i] = id;
+    let n = 0, sx = 0, sy = 0, x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
+    while(sp > 0){
+      const q = stack[--sp], qx = q % w, qy = (q - qx) / w;
+      n++; sx += qx; sy += qy;
+      if(qx < x0) x0 = qx; if(qx > x1) x1 = qx; if(qy < y0) y0 = qy; if(qy > y1) y1 = qy;
+      if(qx > 0 && g[q - 1] < thr && lab[q - 1] === -1){ lab[q - 1] = id; stack[sp++] = q - 1; }
+      if(qx < w - 1 && g[q + 1] < thr && lab[q + 1] === -1){ lab[q + 1] = id; stack[sp++] = q + 1; }
+      if(qy > 0 && g[q - w] < thr && lab[q - w] === -1){ lab[q - w] = id; stack[sp++] = q - w; }
+      if(qy < h - 1 && g[q + w] < thr && lab[q + w] === -1){ lab[q + w] = id; stack[sp++] = q + w; }
+    }
+    blobs.push({n, cx: sx / n, cy: sy / n, w: x1 - x0 + 1, h: y1 - y0 + 1});
+  }
+  return blobs;
+}
+const squarish = (b, min) => b.w >= min && b.h >= min && b.n / (b.w * b.h) > 0.75 && b.w / b.h > 0.6 && b.w / b.h < 1.6;
+
+/* 粗く見つけたトンボを、原寸の小窓で重心まで追い込む */
+function refineMark(bmp, p){
+  const est = bmp.width / PAGE.w;                 // px/mm のざっくり値
+  const R = Math.round(est * 5);
+  const x0 = Math.max(0, Math.round(p[0] - R)), y0 = Math.max(0, Math.round(p[1] - R));
+  const w = Math.min(bmp.width - x0, R * 2), h = Math.min(bmp.height - y0, R * 2);
+  if(w < 10 || h < 10) return p;
+  const g = grayOf(bmp, x0, y0, w, h, w, h);
+  const blobs = findBlobs(g, w, h, threshold(g)).filter(b => squarish(b, est * 1.5));
+  if(!blobs.length) return p;
+  blobs.sort((a, b) => Math.hypot(a.cx - w / 2, a.cy - h / 2) - Math.hypot(b.cx - w / 2, b.cy - h / 2));
+  return [x0 + blobs[0].cx, y0 + blobs[0].cy];
+}
+function detectMarks(bmp){
+  const S = 1200 / Math.max(bmp.width, bmp.height);
+  const w = Math.max(1, Math.round(bmp.width * S)), h = Math.max(1, Math.round(bmp.height * S));
+  const g = grayOf(bmp, 0, 0, bmp.width, bmp.height, w, h);
+  const cand = findBlobs(g, w, h, threshold(g)).filter(b => squarish(b, 6))
+                 .sort((a, b) => b.n - a.n).slice(0, 3);
+  if(cand.length < 3) return null;
+  const pts = cand.map(b => refineMark(bmp, [b.cx / S, b.cy / S]));
+  return assignMarks(pts);
+}
+function assignMarks(pts){
+  const d = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+  let best = -1, bi = 0, bj = 1;
+  for(let i = 0; i < 3; i++) for(let j = i + 1; j < 3; j++){
+    const v = d(pts[i], pts[j]); if(v > best){ best = v; bi = i; bj = j; }
+  }
+  const k = 3 - bi - bj, TL = pts[k], a = pts[bi], b = pts[bj];
+  const [BL, TR] = d(TL, a) > d(TL, b) ? [a, b] : [b, a];
+  return {TL, BL, TR};
+}
+/* mm(左下原点) → スキャンpx のアフィン（3点から厳密解） */
+function solveAffine(m){
+  const S = [[...SP.marks.TL, 1], [...SP.marks.BL, 1], [...SP.marks.TR, 1]];
+  const D = [m.TL, m.BL, m.TR];
+  const det = S[0][0] * (S[1][1] - S[2][1]) - S[0][1] * (S[1][0] - S[2][0]) + (S[1][0] * S[2][1] - S[2][0] * S[1][1]);
+  const inv = [
+    [(S[1][1] - S[2][1]) / det, (S[2][1] - S[0][1]) / det, (S[0][1] - S[1][1]) / det],
+    [(S[2][0] - S[1][0]) / det, (S[0][0] - S[2][0]) / det, (S[1][0] - S[0][0]) / det],
+    [(S[1][0] * S[2][1] - S[2][0] * S[1][1]) / det, (S[2][0] * S[0][1] - S[0][0] * S[2][1]) / det, (S[0][0] * S[1][1] - S[1][0] * S[0][1]) / det]
+  ];
+  const M = [[0, 0], [0, 0], [0, 0]];
+  for(let r = 0; r < 3; r++) for(let c = 0; c < 2; c++)
+    M[r][c] = inv[r][0] * D[0][c] + inv[r][1] * D[1][c] + inv[r][2] * D[2][c];
+  return (x, y) => [x * M[0][0] + y * M[1][0] + M[2][0], x * M[0][1] + y * M[1][1] + M[2][1]];
+}
+
+function showSpec(){
+  const need = Math.round(OUT_W * 25.4 / SP.capW);            // 等倍に必要なスキャン解像度
+  const a4mp = (210 / 25.4 * need) * (297 / 25.4 * need) / 1e6;
+  $('spec').innerHTML =
+    `<b>${SP.label}</b>／コマ ${SP.capW.toFixed(2)} × ${SP.capH.toFixed(2)} mm` +
+    `（映像 ${SP.ratio.toFixed(2)}:1${SP.rot ? '・横送り' : ''}）<br>` +
+    `<b>${SP.cols}列 × ${SP.rows}段 = ${SP.perPage}コマ</b>（24fpsで ${(SP.perPage / 24).toFixed(2)}秒）<br>` +
+    `出力 <b>${OUT_W}×${OUT_H}</b>／等倍に届くスキャン解像度は <b>${need} dpi</b>` +
+    `（A4全体で ${a4mp.toFixed(0)} MP` + (a4mp > 150 ? ' ／ <b>ブラウザには重すぎます</b>' : '') + '）';
+}
+/* トンボの縦横比から用紙の規格を検算する（横の間隔は全規格 186mm 固定） */
+function fmtError(m, key){
+  const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const r = d(m.TL, m.BL) / d(m.TL, m.TR);
+  const L = layout(key, ASPECT);
+  return Math.abs((PAGE.h - L.mY) / (PAGE.w - 24) - r) * (PAGE.w - 24);   // mm換算のずれ
+}
+
+/* ===== ページ管理 ===== */
+const pages = [];     // {name, bmp, marks}
+let frames = [];      // {blob} 1920x1080
+let bmpCache = new Map();
+
+async function addFiles(files){
+  const list = [...files].filter(f => /^image\//.test(f.type))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+  if(!list.length){ status('画像が見つかりません。', 'ng'); return; }
+  for(const f of list){
+    status(`読み込み中… ${f.name}`);
+    try{
+      const bmp = await createImageBitmap(f);
+      const marks = detectMarks(bmp);
+      pages.push({name: f.name, bmp, marks});
+    }catch(e){ status(`${f.name} を読めませんでした。`, 'ng'); }
+  }
+  renderPages();
+  const ok = pages.find(p => p.marks);
+  if(ok){
+    const err = fmtError(ok.marks, SP.key);
+    if(err > 1.5){
+      let best = null;
+      for(const f of FORMATS){ const e = fmtError(ok.marks, f.key); if(!best || e < best.e) best = {f, e}; }
+      if(best && best.f.key !== SP.key && best.e < 1.5){
+        status(`トンボの間隔がこの規格の用紙と合いません。「${best.f.label}」の用紙ではありませんか。`, 'warn');
+        await sleep(1500);
+      }
+    }
+  }
+  const ng = pages.filter(p => !p.marks).length;
+  status(ng ? `${pages.length}ページ読み込み。${ng}ページはトンボを検出できません（クリックで指定してください）。`
+            : `${pages.length}ページ読み込み。トンボを検出しました。`, ng ? 'warn' : '');
+  $('build').disabled = pages.length === 0;
+}
+function renderPages(){
+  const box = $('pages'); box.innerHTML = '';
+  pages.forEach((p, i) => {
+    const el = document.createElement('div'); el.className = 'pg';
+    const cv = document.createElement('canvas'); cv.width = 44; cv.height = 62;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#fff'; c.fillRect(0, 0, 44, 62);
+    const s = Math.min(44 / p.bmp.width, 62 / p.bmp.height);
+    c.drawImage(p.bmp, (44 - p.bmp.width * s) / 2, (62 - p.bmp.height * s) / 2, p.bmp.width * s, p.bmp.height * s);
+    el.appendChild(cv);
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = p.name; el.appendChild(nm);
+    const st = document.createElement('span');
+    st.className = 'st ' + (p.marks ? 'ok' : 'ng');
+    st.textContent = p.marks ? '検出OK' : '手動指定';
+    st.style.cursor = 'pointer'; st.onclick = () => manualPick(i);
+    el.appendChild(st);
+    const x = document.createElement('button'); x.className = 'ghost'; x.textContent = '×';
+    x.onclick = () => { pages.splice(i, 1); renderPages(); $('build').disabled = !pages.length; };
+    el.appendChild(x);
+    box.appendChild(el);
+  });
+}
+/* 手動でトンボ位置を指す */
+let picking = null;
+function manualPick(i){
+  const p = pages[i];
+  picking = {i, pts: [], scale: 0};
+  const box = $('pick'), cv = $('pickcv'), c = cv.getContext('2d');
+  const W = 900, s = W / p.bmp.width;
+  cv.width = W; cv.height = Math.round(p.bmp.height * s);
+  c.drawImage(p.bmp, 0, 0, cv.width, cv.height);
+  picking.scale = s;
+  box.style.display = 'block';
+  $('pickmsg').textContent = `${p.name}：左上のトンボをクリック（1/3）`;
+  cv.onclick = e => {
+    const r = cv.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (cv.width / r.width) / picking.scale;
+    const y = (e.clientY - r.top) * (cv.height / r.height) / picking.scale;
+    picking.pts.push([x, y]);
+    c.fillStyle = '#c0392b';
+    c.beginPath(); c.arc((e.clientX - r.left) * (cv.width / r.width), (e.clientY - r.top) * (cv.height / r.height), 6, 0, 7); c.fill();
+    if(picking.pts.length === 3){
+      const [TL, TR, BL] = picking.pts;
+      pages[picking.i].marks = {TL, TR, BL};
+      box.style.display = 'none'; picking = null;
+      renderPages(); status('位置を設定しました。');
+    }else{
+      $('pickmsg').textContent = `${p.name}：${picking.pts.length === 1 ? '右上' : '左下'}のトンボをクリック（${picking.pts.length + 1}/3）`;
+    }
+  };
+}
+
+/* ===== 切り出し ===== */
+function levelsLUT(){
+  const wl = +$('white').value;
+  const lut = new Uint8Array(256);
+  for(let v = 0; v < 256; v++) lut[v] = Math.min(255, Math.round(v * 255 / wl));
+  return lut;
+}
+async function buildFrames(){
+  frames = []; bmpCache.clear();
+  const ins = (+$('inset').value) / 1000;                 // 0〜3%
+  const cv = document.createElement('canvas'); cv.width = OUT_W; cv.height = OUT_H;
+  const c = cv.getContext('2d', {willReadFrequently: true});
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  const mode = $('mode').value;
+  const lut = levelsLUT();
+  const tcv = document.createElement('canvas'); tcv.width = 160; tcv.height = 90;
+  const tc = tcv.getContext('2d');
+  for(let pi = 0; pi < pages.length; pi++){
+    const p = pages[pi];
+    if(!p.marks){ status(`${p.name} のトンボが未設定です。`, 'ng'); return; }
+    const mm2px = solveAffine(p.marks);
+    for(let slot = 0; slot < SP.perPage; slot++){
+      status(`切り出し中… ${pi + 1}ページ ${slot + 1}/${SP.perPage}`);
+      const f = capMM(slot, $('order').value);
+      const dx = f.w * ins, dy = f.h * ins;
+      const x0 = f.x + dx, y0 = f.y + dy, w = f.w - dx * 2, h = f.h - dy * 2;
+      // 出力の左上・右上・左下に対応するフィルム上の点（横送りは絵が倒れている）
+      const p00 = SP.rot ? mm2px(x0, y0)         : mm2px(x0, y0 + h);
+      const p10 = SP.rot ? mm2px(x0, y0 + h)     : mm2px(x0 + w, y0 + h);
+      const p01 = SP.rot ? mm2px(x0 + w, y0)     : mm2px(x0, y0);
+      // 出力→入力 のアフィン
+      const a0 = (p10[0] - p00[0]) / OUT_W, a1 = (p01[0] - p00[0]) / OUT_H, a2 = p00[0];
+      const b0 = (p10[1] - p00[1]) / OUT_W, b1 = (p01[1] - p00[1]) / OUT_H, b2 = p00[1];
+      const det = a0 * b1 - a1 * b0;
+      if(!det){ status('位置合わせに失敗しました。', 'ng'); return; }
+      // 逆行列（入力→出力）
+      const i0 = b1 / det, i1 = -a1 / det, i2 = (a1 * b2 - a2 * b1) / det;
+      const j0 = -b0 / det, j1 = a0 / det, j2 = (a2 * b0 - a0 * b2) / det;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.fillStyle = '#fff'; c.fillRect(0, 0, OUT_W, OUT_H);
+      c.setTransform(i0, j0, i1, j1, i2, j2);
+      c.drawImage(p.bmp, 0, 0);
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      const img = c.getImageData(0, 0, OUT_W, OUT_H), d = img.data;
+      // 描かれている量（色でも線でも「白でない画素」で判定）
+      let ink = 0, n = 0;
+      for(let i = 0; i < d.length; i += 16){
+        n++;
+        const mn = Math.min(d[i], d[i + 1], d[i + 2]);
+        if(mn < 225) ink++;
+      }
+      const coverage = ink / n;
+      const blank = coverage < 0.0015;                                  // ほぼ白紙
+      if(mode === 'paper'){                        // 全chを同率で持ち上げる＝色相はそのまま
+        for(let i = 0; i < d.length; i += 4){ d[i] = lut[d[i]]; d[i + 1] = lut[d[i + 1]]; d[i + 2] = lut[d[i + 2]]; }
+        c.putImageData(img, 0, 0);
+      }else if(mode === 'bw'){
+        const t = +$('white').value;
+        for(let i = 0; i < d.length; i += 4){
+          const v = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 < t * 0.72 ? 0 : 255;
+          d[i] = d[i + 1] = d[i + 2] = v;
+        }
+        c.putImageData(img, 0, 0);
+      }
+      const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92));
+      tc.drawImage(cv, 0, 0, 160, 90);
+      frames.push({blob, blank, page: pi + 1, slot: slot + 1,
+                   thumb: tcv.toDataURL('image/jpeg', 0.6)});
+      if(slot % 8 === 0) await sleep(0);
+    }
+  }
+  $('seek').max = Math.max(0, frames.length - 1);
+  $('seek').value = 0;
+  $('rec').disabled = frames.length === 0;
+  $('inF').value = 1; $('outF').value = frames.length;
+  $('inF').max = frames.length; $('outF').max = frames.length;
+  renderStrip();
+  const nb = frames.filter(f => f.blank).length;
+  status(`${frames.length}コマを切り出しました（うち白紙 ${nb}コマ）。使う範囲を指定してください。`);
+  showFrame(0);
+}
+
+/* ===== 使う範囲 ===== */
+function clampRange(){
+  const n = frames.length;
+  let a = Math.max(1, Math.min(n, parseInt($('inF').value, 10) || 1));
+  let b = Math.max(1, Math.min(n, parseInt($('outF').value, 10) || n));
+  if(a > b){ const t = a; a = b; b = t; }
+  $('inF').value = a; $('outF').value = b;
+  return [a, b];
+}
+function selection(){                       // 実際に書き出すコマの並び
+  if(!frames.length) return [];
+  const [a, b] = clampRange();
+  const skipBlank = $('skip').value === '1';
+  const out = [];
+  for(let i = a - 1; i <= b - 1; i++) if(!(skipBlank && frames[i].blank)) out.push(i);
+  return out;
+}
+function renderStrip(){
+  const box = $('strip'); box.innerHTML = '';
+  frames.forEach((f, i) => {
+    const d = document.createElement('div');
+    d.className = 'fr' + (f.blank ? ' blank' : '');
+    d.dataset.i = i;
+    d.innerHTML = `<img src="${f.thumb}"><span>${i + 1}</span>`;
+    d.onclick = () => { $('seek').value = i; showFrame(i); markStrip(); };
+    box.appendChild(d);
+  });
+  markStrip();
+}
+function markStrip(){
+  if(!frames.length){ $('rangeInfo').textContent = ''; return; }
+  const [a, b] = clampRange();
+  const cur = +$('seek').value;
+  [...$('strip').children].forEach((el, i) => {
+    el.classList.toggle('out', i < a - 1 || i > b - 1);
+    el.classList.toggle('cur', i === cur);
+  });
+  const sel = selection();
+  const fps = +$('fps').value, hold = +$('hold').value, loop = +$('loop').value;
+  const dropped = (b - a + 1) - sel.length;
+  $('rangeInfo').textContent =
+    `${a}〜${b} の ${b - a + 1}コマ` + (dropped ? `（白紙 ${dropped}コマを除いて ${sel.length}コマ）` : '') +
+    ` → ${(sel.length * hold * loop / fps).toFixed(2)}秒`;
+}
+
+/* ===== 表示・再生 ===== */
+const view = $('view'), vctx = view.getContext('2d');
+async function getBmp(i){
+  if(bmpCache.has(i)) return bmpCache.get(i);
+  const b = await createImageBitmap(frames[i].blob);
+  bmpCache.set(i, b);
+  if(bmpCache.size > 6){ const k = bmpCache.keys().next().value; bmpCache.get(k).close(); bmpCache.delete(k); }
+  return b;
+}
+async function showFrame(i){
+  if(!frames.length) return;
+  const b = await getBmp(i);
+  vctx.drawImage(b, 0, 0, OUT_W, OUT_H);
+  $('pos').textContent = `${i + 1} / ${frames.length}`;
+  $('seek').value = i;
+}
+let playing = false;
+async function play(){
+  if(playing){ playing = false; $('play').textContent = '▶ 再生'; return; }
+  playing = true; $('play').textContent = '■ 停止';
+  const fps = +$('fps').value, hold = +$('hold').value;
+  const sel = selection();
+  if(!sel.length){ playing = false; $('play').textContent = '▶ 再生'; return; }
+  let k = Math.max(0, sel.indexOf(+$('seek').value));
+  const dt = 1000 / fps * hold;
+  let t = performance.now();
+  while(playing){
+    await showFrame(sel[k]);
+    markStrip();
+    k = (k + 1) % sel.length;
+    t += dt;
+    await sleep(Math.max(0, t - performance.now()));
+  }
+}
+
+/* ===== 動画書き出し ===== */
+function pickMime(){
+  const list = ['video/mp4;codecs=avc1.42E01E', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  for(const m of list) if(window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+  return null;
+}
+async function record(){
+  const mime = pickMime();
+  if(!mime){ status('このブラウザは動画の書き出しに対応していません（Chrome推奨）。', 'ng'); return; }
+  playing = false; $('play').textContent = '▶ 再生';
+  const fps = +$('fps').value, hold = +$('hold').value, loop = +$('loop').value;
+  const sel = selection();
+  if(!sel.length){ status('書き出すコマがありません。範囲を確認してください。', 'ng'); return; }
+  const stream = view.captureStream(0);
+  const track = stream.getVideoTracks()[0];
+  const rec = new MediaRecorder(stream, {mimeType: mime, videoBitsPerSecond: Math.round(16e6 * (OUT_W * OUT_H) / (1920 * 1080))});
+  const chunks = [];
+  rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+  const done = new Promise(r => rec.onstop = r);
+  rec.start();
+  const dt = 1000 / fps;
+  const total = sel.length * hold * loop;
+  const t0 = performance.now();
+  for(let n = 0; n < total; n++){
+    const idx = sel[Math.floor(n / hold) % sel.length];
+    const b = await getBmp(idx);
+    vctx.drawImage(b, 0, 0, OUT_W, OUT_H);
+    track.requestFrame();
+    if(n % 6 === 0) status(`書き出し中… ${Math.round(n / total * 100)}%（実時間で ${(total * dt / 1000).toFixed(1)}秒）`);
+    await sleep(Math.max(0, t0 + (n + 1) * dt - performance.now()));
+  }
+  await sleep(dt * 2);
+  rec.stop(); await done;
+  const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+  const url = URL.createObjectURL(new Blob(chunks, {type: mime}));
+  const a = document.createElement('a'); a.href = url; a.download = `animation_${fps}fps.${ext}`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 6000);
+  status(`書き出しました（${total}フレーム / ${ext.toUpperCase()}）。`);
+}
+
+/* ===== 操作 ===== */
+$('drop').onclick = () => {
+  const i = document.createElement('input');
+  i.type = 'file'; i.multiple = true; i.accept = 'image/*';
+  i.onchange = () => addFiles(i.files); i.click();
+};
+['dragenter', 'dragover'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.add('hot'); }));
+['dragleave', 'drop'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.remove('hot'); }));
+$('drop').addEventListener('drop', e => addFiles(e.dataTransfer.files));
+function resetFrames(msg){
+  frames = []; bmpCache.clear();
+  $('rec').disabled = true; $('seek').max = 0;
+  $('strip').innerHTML = ''; $('rangeInfo').textContent = '';
+  vctx.setTransform(1,0,0,1,0,0); vctx.fillStyle = '#fff'; vctx.fillRect(0, 0, OUT_W, OUT_H);
+  showSpec(); status(msg);
+}
+$('outsize').onchange = () => { setOutSize(); resetFrames('出力サイズを変えました。もう一度「コマを切り出す」を押してください。'); };
+$('aspect').onchange = () => {
+  ASPECT = parseFloat($('aspect').value);
+  SP = layout($('fmt').value, ASPECT);
+  setOutSize(); resetFrames('画面比を変えました。もう一度「コマを切り出す」を押してください。');
+};
+function buildFormatMenu(){
+  const sel = $('fmt'); let gr = null, og = null;
+  for(const f of FORMATS){
+    if(f.group !== gr){ gr = f.group; og = document.createElement('optgroup'); og.label = gr; sel.appendChild(og); }
+    const o = document.createElement('option'); o.value = f.key; o.textContent = f.label; og.appendChild(o);
+  }
+  sel.value = 'ac35';
+}
+function reLayout(msg){
+  const ps = PAPERS[$('paper').value] || PAPERS.A4;
+  PAGE.w = ps[0]; PAGE.h = ps[1];
+  SP = layout($('fmt').value, ASPECT);
+  $('aspectRow').style.display = SP.custom ? 'flex' : 'none';
+  setOutSize();
+  resetFrames(msg);
+}
+$('fmt').onchange = () => reLayout('規格を変えました。もう一度「コマを切り出す」を押してください。');
+$('paper').onchange = () => reLayout('用紙サイズを変えました。もう一度「コマを切り出す」を押してください。');
+$('white').oninput = () => { $('wlv').textContent = $('white').value; };
+$('mode').onchange = () => { $('wrow').style.display = $('mode').value === 'raw' ? 'none' : 'flex'; };
+$('inset').oninput = () => { $('inv').textContent = (+$('inset').value / 10).toFixed(1) + '%'; };
+$('seek').oninput = () => { showFrame(+$('seek').value); markStrip(); };
+$('inF').oninput = markStrip;
+$('outF').oninput = markStrip;
+$('skip').onchange = markStrip;
+['fps','hold','loop'].forEach(id => $(id).onchange = markStrip);
+$('setIn').onclick = () => { $('inF').value = +$('seek').value + 1; markStrip(); };
+$('setOut').onclick = () => { $('outF').value = +$('seek').value + 1; markStrip(); };
+$('play').onclick = play;
+$('build').onclick = () => { $('build').disabled = true; buildFrames().finally(() => $('build').disabled = false); };
+$('rec').onclick = () => { $('rec').disabled = true; record().finally(() => $('rec').disabled = false); };
+buildFormatMenu();
+setOutSize();
+vctx.fillStyle = '#fff'; vctx.fillRect(0, 0, OUT_W, OUT_H);
+showSpec();
+</script>
+</body>
+</html>
