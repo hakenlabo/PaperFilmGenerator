@@ -49,6 +49,7 @@
   .status.warn{color:var(--amber)}
   .spec{font-size:11.5px;color:var(--sub);margin-top:8px;padding:9px 10px;background:#f6f8fa;border-radius:4px;line-height:1.7}
   .spec b{color:var(--ink);font-weight:600}
+  .tol{font-size:11px;color:var(--sub);margin:10px 0 0;line-height:1.6}
   .help{font-size:11.5px;color:var(--sub);margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 </style>
 </head>
@@ -241,6 +242,7 @@
       位置合わせに使うので、切ったり隠したりしないでください。<br>
       帯はフィルム外形の線で切り出すと、そのまま撮影ガイドの通り道に入ります。
     </div>
+    <p class="tol" data-i18n="tolNote">フィルムの寸法は SMPTE 規格（SMPTE 7・59・109・119・139・152・157・231 ほか）に基づいています。規格そのものに許容範囲があり、画面の位置などはその中央の値で描いています。また印刷やスキャンでの伸び縮みもあるため、実際のフィルムとはわずかな誤差が出ることがあります。</p>
   </div>
 
   <div class="panel">
@@ -272,6 +274,9 @@
    画面の文字は data-i18n / data-i18n-html のキーで差し替える。日本語にないキーはそのまま表示 */
 const I18N = {
  "ja": {
+  "tolNote": "フィルムの寸法は SMPTE 規格（SMPTE 7・59・109・119・139・152・157・231 ほか）に基づいています。規格そのものに許容範囲があり、画面の位置などはその中央の値で描いています。また印刷やスキャンでの伸び縮みもあるため、実際のフィルムとはわずかな誤差が出ることがあります。",
+  "ratio": "{r}:1",
+  "ratioNear": "{r}:1（≈{n}）",
   "toScan": "スキャン → 動画アプリ",
   "note": "実際のフィルム規格の寸法 / スキャン用トンボ付き",
   "hPaper": "1. 用紙とフィルム",
@@ -362,6 +367,9 @@ const I18N = {
   "failed": "失敗："
  },
  "en": {
+  "tolNote": "Film dimensions follow the SMPTE standards (SMPTE 7, 59, 109, 119, 139, 152, 157, 231 and others). The standards themselves allow tolerances, and positions such as the image area are drawn at the middle of each range. Printing and scanning can also stretch or shrink the paper, so small differences from real film are possible.",
+  "ratio": "{r}:1",
+  "ratioNear": "{r}:1 (≈{n})",
   "toScan": "Scan → video app",
   "note": "Real film-format dimensions / registration marks for scanning",
   "hPaper": "1. Paper & film",
@@ -466,6 +474,9 @@ const I18N = {
   "fmt_c50": "Custom 50mm"
  },
  "ko": {
+  "tolNote": "필름 치수는 SMPTE 규격(SMPTE 7·59·109·119·139·152·157·231 등)을 따릅니다. 규격 자체에 허용 범위가 있어 화면 위치 등은 그 중간값으로 그렸습니다. 또한 인쇄나 스캔 과정에서 종이가 늘거나 줄 수 있으므로 실제 필름과 약간의 오차가 생길 수 있습니다.",
+  "ratio": "{r}:1",
+  "ratioNear": "{r}:1 (≈{n})",
   "toScan": "스캔 → 동영상 앱",
   "note": "실제 필름 규격 치수 / 스캔용 맞춤 표시 포함",
   "hPaper": "1. 용지와 필름",
@@ -599,46 +610,56 @@ const PAPERS = {A5: [148, 210], A4: [210, 297], A3: [297, 420]};
 const PAGE = {w: 210, h: 297};
 const MIN_MX = 8.0, MIN_MY = 12.0;
 
+/* 寸法の出典（SMPTE 規格）。画面位置 left はパーフ側（基準縁）から画面までで、規格の許容範囲の中央をとる。
+   8mm R : SMPTE 231（画面）・16mm 2R を半分に割いたもの（パーフ縁 0.90）
+   8mm S : SMPTE 157（画面 5.79 ref × 4.14 min、中心は基準縁から 4.32）・149（パーフ）
+   16mm  : SMPTE 109（幅 15.95、パーフ縁 0.90）・7（画面、基準縁から 2.74〜2.95）
+           スーパー16はパーフ側の縁を標準16と揃え、反対側へ 2.26 広げた画面
+   35mm  : SMPTE 139（幅 34.975、ピッチ 4.75、パーフ縁 2.01）・59（Style A/B/C の画面と中心位置）。アカデミーとシネスコの幅は慣用の 21.95（0.864 in、規格 0.866 nom の許容内）
+           ビスタ・テクニスコープはアカデミーと同じ中心（基準縁から 18.75）に置く
+   65/70 : SMPTE 119（幅 69.95、パーフ縁 5.46）・152（5パーフの映写範囲 48.56 × 22.10）
+           IMAX 15/70 は 70mm プリントの映写範囲 69.60 × 48.56
+   1コマ送りはすべてパーフピッチ（35/70mm 4.75、16mm 7.62、8mm R 3.81、S 4.234）の整数倍 */
 const FORMATS = [
   {key:'r8',   label:'レギュラー8（ダブル8）', group:'8mm',
-   film:7.975, pitch:3.81,   across:4.80,  along:3.50,
-   perf:{w:1.829,h:1.270,r:0.25,edge:0.90,per:1,sides:1,at:'line'}, left:2.95},
+   film:7.975, pitch:3.81,   across:4.88,  along:3.68,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.90,per:1,sides:1,at:'line'}, left:2.765},
   {key:'s8',   label:'スーパー8', group:'8mm',
-   film:7.975, pitch:4.234,  across:5.69,  along:4.22,
-   perf:{w:0.914,h:1.143,r:0.13,edge:0.51,per:1,sides:1,at:'center'}, left:1.47},
+   film:7.975, pitch:4.234,  across:5.79,  along:4.14,
+   perf:{w:0.914,h:1.143,r:0.13,edge:0.51,per:1,sides:1,at:'center'}, left:1.425},
 
   {key:'r16',  label:'16mm 標準（両側パーフ）', group:'16mm',
-   film:16.0,  pitch:7.62,   across:10.26, along:7.49,
-   perf:{w:1.829,h:1.270,r:0.25,edge:0.51,per:1,sides:2,at:'line'}, left:2.87},
+   film:15.95, pitch:7.62,   across:10.26, along:7.49,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.90,per:1,sides:2,at:'line'}, left:2.845},
   {key:'s16',  label:'スーパー16', group:'16mm',
-   film:16.0,  pitch:7.62,   across:12.52, along:7.41,
-   perf:{w:1.829,h:1.270,r:0.25,edge:0.51,per:1,sides:1,at:'line'}, left:2.93},
+   film:15.95, pitch:7.62,   across:12.52, along:7.41,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.90,per:1,sides:1,at:'line'}, left:2.845},
 
   {key:'ac35', label:'35mm アカデミー（4パーフ）', group:'35mm',
-   film:35.0,  pitch:19.05,  across:21.95, along:16.00,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:7.995},
+   film:34.975, pitch:19.00, across:21.95, along:16.00,
+   perf:{w:2.794,h:1.981,r:0.51,edge:2.01,per:4,sides:2,at:'span'}, left:7.775},
   {key:'fa35', label:'35mm フルアパーチャー／スーパー35', group:'35mm',
-   film:35.0,  pitch:19.05,  across:24.89, along:18.67,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:5.055},
+   film:34.975, pitch:19.00, across:24.92, along:18.67,
+   perf:{w:2.794,h:1.981,r:0.51,edge:2.01,per:4,sides:2,at:'span'}, left:5.02},
   {key:'sc35', label:'35mm シネマスコープ（アナモ2倍）', group:'35mm',
-   film:35.0,  pitch:19.05,  across:21.95, along:18.59,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:7.995, squeeze:2},
+   film:34.975, pitch:19.00, across:21.95, along:18.59,
+   perf:{w:2.794,h:1.981,r:0.51,edge:2.01,per:4,sides:2,at:'span'}, left:7.775, squeeze:2},
   {key:'vi35', label:'35mm ビスタ 1.85（映写マスク）', group:'35mm',
-   film:35.0,  pitch:19.05,  across:20.96, along:11.33,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:8.49},
+   film:34.975, pitch:19.00, across:20.96, along:11.33,
+   perf:{w:2.794,h:1.981,r:0.51,edge:2.01,per:4,sides:2,at:'span'}, left:8.27},
   {key:'tc35', label:'35mm テクニスコープ（2パーフ）', group:'35mm',
-   film:35.0,  pitch:9.525,  across:21.95, along:9.47,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:2,sides:2,at:'span'}, left:7.995},
+   film:34.975, pitch:9.50,  across:21.95, along:9.47,
+   perf:{w:2.794,h:1.981,r:0.51,edge:2.01,per:2,sides:2,at:'span'}, left:7.775},
   {key:'vv35', label:'ビスタビジョン（8パーフ横送り）', group:'35mm',
-   film:35.0,  pitch:38.10,  across:24.92, along:37.72, rot:true,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:8,sides:2,at:'span'}, left:5.04},
+   film:34.975, pitch:38.00, across:24.92, along:37.72, rot:true,
+   perf:{w:2.794,h:1.981,r:0.51,edge:2.01,per:8,sides:2,at:'span'}, left:5.03},
 
   {key:'td70', label:'70mm 5パーフ（Todd-AO）', group:'65/70mm',
-   film:70.0,  pitch:23.8125,across:52.63, along:23.01,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:5,sides:2,at:'span'}, left:8.685},
+   film:69.95, pitch:23.75,  across:48.56, along:22.10,
+   perf:{w:2.794,h:1.981,r:0.51,edge:5.46,per:5,sides:2,at:'span'}, left:10.695},
   {key:'im70', label:'IMAX 15/70（15パーフ横送り）', group:'65/70mm',
-   film:70.0,  pitch:71.4375,across:52.63, along:70.41, rot:true,
-   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:15,sides:2,at:'span'}, left:8.685},
+   film:69.95, pitch:71.25,  across:48.56, along:69.60, rot:true,
+   perf:{w:2.794,h:1.981,r:0.51,edge:5.46,per:15,sides:2,at:'span'}, left:10.695},
 
   {key:'c45',  label:'自作 45mm', group:'自作', film:45.0, custom:true},
   {key:'c50',  label:'自作 50mm', group:'自作', film:50.0, custom:true}
@@ -672,6 +693,7 @@ function layout(key, aspect){
   return {
     key, label: f.label, film: f.film, custom: !!f.custom, rot, squeeze: f.squeeze || 1,
     capW, capH, pitch, left, perf, gutter, cols, rows, mX, mY, ratio,
+    gapY: (pitch - capH) / 2,                                                   // 送り幅の中で画面を上下中央に
     colPitch: f.film + gutter, perPage: cols * rows,
     numSize: Math.max(3.2, Math.min(6, gutter - 1.6)),
     marks: [[12, mY / 2], [12, PAGE.h - mY / 2], [PAGE.w - 12, PAGE.h - mY / 2]],   // BL, TL, TR（大きい・向き基準）
@@ -684,7 +706,7 @@ let PAGE_W = PAGE.w * MM, PAGE_H = PAGE.h * MM;
 
 const stripX = c => (SP.mX + c * SP.colPitch) * MM;
 const capX   = c => (SP.mX + c * SP.colPitch + SP.left) * MM;
-const capY   = rowTop => (SP.mY + (SP.rows - 1 - rowTop) * SP.pitch) * MM;
+const capY   = rowTop => (SP.mY + (SP.rows - 1 - rowTop) * SP.pitch + SP.gapY) * MM;
 
 function slotRect(slot, order){
   let col, rowTop;
@@ -737,6 +759,13 @@ function template(){
   return {rects, rounds, fills, lines};
 }
 let TPL = template();
+/* フィルムの画面比（アナモは伸長後、横送りは倒した後）。4:3・16:9 に近ければ添える */
+function fmtRatio(f){
+  const r = f.custom ? (parseFloat(document.getElementById('aspect').value) || 16 / 9)
+                     : (f.rot ? f.along / f.across : f.across / f.along) * (f.squeeze || 1);
+  const near = [[4 / 3, '4:3'], [16 / 9, '16:9']].find(([v]) => Math.abs(r / v - 1) < 0.01);
+  return near ? tr('ratioNear', {r: r.toFixed(2), n: near[1]}) : tr('ratio', {r: r.toFixed(2)});
+}
 function buildFormatMenu(){
   const sel = document.getElementById('fmt');
   const keep = sel.value || 'ac35';
@@ -745,7 +774,7 @@ function buildFormatMenu(){
   for(const f of FORMATS){
     if(f.group !== gr){ gr = f.group; og = document.createElement('optgroup'); og.label = gr === '自作' ? tr('custom') : gr; sel.appendChild(og); }
     const o = document.createElement('option');
-    o.value = f.key; o.textContent = fmtLabel(f); og.appendChild(o);
+    o.value = f.key; o.textContent = fmtLabel(f) + ' — ' + fmtRatio(f); og.appendChild(o);
   }
   sel.value = keep;
 }
@@ -1183,7 +1212,7 @@ $('fmt').onchange = reLayout;
 $('paper').onchange = reLayout;
 $('perf').onchange = reLayout;
 $('tint').onchange = () => applyTint();
-$('aspect').onchange = reLayout;
+$('aspect').onchange = () => { buildFormatMenu(); reLayout(); };
 $('drop').onclick = () => {
   const i = document.createElement('input');
   i.type = 'file'; i.multiple = true; i.accept = 'image/*,video/*';
