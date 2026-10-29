@@ -1,4 +1,4 @@
-# 作画用紙ジェネレーター — 開発メモ
+# ペーパーフィルムジェネレーター — 開発メモ
 
 - 1ファイル構成（`index.html` に HTML/CSS/JS すべて）。外部ライブラリなし。
 - 公開：GitHub `t1912-hub/PaperFilmGenerator` の main ルートを GitHub Pages で配信（`.nojekyll`）。
@@ -7,3 +7,8 @@
 - 元ファイル：Google Drive `02_AREA/03 研究/Paper film/Paperfilm Generator/1_sheet_generator_0911.html`（2026-09-11版）。
   以後はこのリポジトリが正本。Drive 側の古い版（`1_sheet_generator_6.html` など）は編集しない。
 - 関連：同フォルダの `PaperFilm_scan_to_video_0907.html`（スキャン → 動画）は別ツール。フィルム規格の実寸表（FORMATS）は両者で共通にする想定。
+- 表示言語（2026-10-29〜）：日本語・英語・韓国語。画面の文字は `data-i18n` / `data-i18n-html` のキーで、
+  スクリプト中の文字は `tr('キー', {値})` で出す。辞書は `I18N`（ja / en / ko）。文字を足すときは3言語とも書く。
+  ローカル変数に `t` が多いので翻訳関数は `tr`。選んだ言語は localStorage `pfg:lang`、URL の `?lang=` が優先。
+  PDF に入る文字（規格ラベル・コマ番号）は Helvetica なので ASCII のみ、言語に関係なく同じ。
+- アプリ名は「ペーパーフィルムジェネレーター」（2026-10-29 に「作画用紙ジェネレーター」から改名）。

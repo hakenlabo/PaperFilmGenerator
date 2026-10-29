@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>作画用紙ジェネレーター</title>
+<title>ペーパーフィルムジェネレーター</title>
 <style>
   :root{--paper:#fff;--desk:#e8ecef;--ink:#16191c;--sub:#5d666e;--line:#c9d1d8;--blue:#2f6fb5;--blue-soft:#dceaf8;--amber:#c98a1e}
   *{box-sizing:border-box} html,body{margin:0;padding:0}
@@ -12,6 +12,8 @@
   header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
   h1{font-size:18px;margin:0;letter-spacing:.04em}
   header .note{color:var(--sub);font-size:12px}
+  header .lang{margin-left:auto;font-size:12px;padding:3px 6px}
+  :lang(ko) body{font-family:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",Arial,sans-serif}
   .cols{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start}
   @media (max-width:900px){.cols{grid-template-columns:1fr}}
   .panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px}
@@ -51,27 +53,32 @@
 <body>
 <div class="wrap">
 <header>
-  <h1>作画用紙ジェネレーター</h1>
-  <span class="note">実際のフィルム規格の寸法 / スキャン用トンボ付き</span>
+  <h1 data-i18n="appTitle">ペーパーフィルムジェネレーター</h1>
+  <span class="note" data-i18n="note">実際のフィルム規格の寸法 / スキャン用トンボ付き</span>
+  <select id="lang" class="lang" aria-label="Language">
+    <option value="ja">日本語</option>
+    <option value="en">English</option>
+    <option value="ko">한국어</option>
+  </select>
 </header>
 
 <div class="cols">
   <div class="panel">
-    <h2>1. 用紙とフィルム</h2>
+    <h2 data-i18n="hPaper">1. 用紙とフィルム</h2>
     <div class="row">
-      <label>用紙</label>
+      <label data-i18n="paper">用紙</label>
       <select id="paper">
-        <option value="A5">A5（148 × 210）</option>
-        <option value="A4" selected>A4（210 × 297）</option>
-        <option value="A3">A3（297 × 420）</option>
+        <option value="A5">A5 (148 × 210 mm)</option>
+        <option value="A4" selected>A4 (210 × 297 mm)</option>
+        <option value="A3">A3 (297 × 420 mm)</option>
       </select>
     </div>
     <div class="row">
-      <label>フィルム</label>
+      <label data-i18n="film">フィルム</label>
       <select id="fmt"></select>
     </div>
     <div class="row" id="aspectRow" style="display:none">
-      <label>画面比</label>
+      <label data-i18n="aspect">画面比</label>
       <select id="aspect">
         <option value="1.7778" selected>16:9</option>
         <option value="1.3333">4:3</option>
@@ -79,83 +86,83 @@
     </div>
     <div class="spec" id="spec"></div>
 
-    <h2 style="margin-top:18px">2. 下絵（任意）</h2>
-    <div class="drop" id="drop">
+    <h2 style="margin-top:18px" data-i18n="hUnder">2. 下絵（任意）</h2>
+    <div class="drop" id="drop" data-i18n-html="dropHtml">
       <strong>画像・動画をドロップ</strong>
       連番画像でも、実写やピクシレーションの動画でも<br>入れなければ白紙の用紙になります
     </div>
     <div id="vpanel" style="display:none;border:1px solid var(--line);border-radius:5px;padding:10px;margin-top:10px;background:#fbfcfd">
       <div class="row" style="margin-top:0">
-        <label>動画</label>
+        <label data-i18n="video">動画</label>
         <span class="mono" id="vinfo" style="font-size:11.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-        <button class="ghost" id="vclose">外す</button>
+        <button class="ghost" id="vclose" data-i18n="vclose">外す</button>
       </div>
       <div class="row">
-        <label>コマの拾い方</label>
+        <label data-i18n="vmode">コマの拾い方</label>
         <select id="vmode">
-          <option value="fps" selected>一定間隔</option>
-          <option value="change">変化したところだけ</option>
+          <option value="fps" selected data-i18n="optFps">一定間隔</option>
+          <option value="change" data-i18n="optChange">変化したところだけ</option>
         </select>
       </div>
       <div class="row" id="vfpsRow">
-        <label>間隔</label>
+        <label data-i18n="vint">間隔</label>
         <select id="vfps">
           <option value="24">24 fps</option>
-          <option value="12" selected>12 fps（2コマ打ち相当）</option>
-          <option value="8">8 fps（3コマ打ち相当）</option>
+          <option value="12" selected data-i18n="opt12">12 fps（2コマ打ち相当）</option>
+          <option value="8" data-i18n="opt8">8 fps（3コマ打ち相当）</option>
           <option value="4">4 fps</option>
         </select>
       </div>
       <div class="row" id="vthRow" style="display:none">
-        <label>変化の量</label>
+        <label data-i18n="vth">変化の量</label>
         <input type="range" id="vth" min="1" max="40" value="8" style="flex:1">
         <span class="mono" id="vthv" style="font-size:12px">8</span>
       </div>
       <div class="row">
-        <label>使う範囲</label>
+        <label data-i18n="vrange">使う範囲</label>
         <input type="number" id="vin" value="0" min="0" step="0.1" style="width:64px">
         <span style="color:var(--sub)">〜</span>
         <input type="number" id="vout" value="0" min="0" step="0.1" style="width:64px">
-        <span style="font-size:12px;color:var(--sub)">秒</span>
+        <span style="font-size:12px;color:var(--sub)" data-i18n="sec">秒</span>
       </div>
       <div class="row">
-        <label>下絵の作り方</label>
+        <label data-i18n="vtone">下絵の作り方</label>
         <select id="vtone">
-          <option value="gray" selected>グレースケール</option>
-          <option value="color">カラーのまま</option>
-          <option value="edge">輪郭だけ（線画化）</option>
+          <option value="gray" selected data-i18n="optGray">グレースケール</option>
+          <option value="color" data-i18n="optColor">カラーのまま</option>
+          <option value="edge" data-i18n="optEdge">輪郭だけ（線画化）</option>
         </select>
       </div>
-      <div class="row"><label>コントラスト</label>
+      <div class="row"><label data-i18n="contrast">コントラスト</label>
         <input type="range" id="vcon" min="50" max="400" value="150" style="flex:1">
         <span class="mono" id="vconv" style="font-size:12px">1.5</span></div>
-      <div class="row"><label>白飛ばし</label>
+      <div class="row"><label data-i18n="white">白飛ばし</label>
         <input type="range" id="vwhite" min="120" max="255" value="235" style="flex:1">
         <span class="mono" id="vwhitev" style="font-size:12px">235</span></div>
-      <div class="row" id="vedgeRow"><label>輪郭強調</label>
+      <div class="row" id="vedgeRow"><label data-i18n="edgeBoost">輪郭強調</label>
         <input type="range" id="vedge" min="0" max="100" value="0" style="flex:1">
         <span class="mono" id="vedgev" style="font-size:12px">0</span></div>
-      <button class="primary" id="vgrab" style="font-size:14px;padding:9px">コマを取り込む</button>
+      <button class="primary" id="vgrab" style="font-size:14px;padding:9px" data-i18n="vgrab">コマを取り込む</button>
     </div>
     <div class="row" style="justify-content:space-between">
       <span class="mono" id="count" style="font-size:12px;color:var(--sub)">0 枚</span>
       <span>
-        <button class="ghost" id="resort">ファイル名順</button>
-        <button class="ghost" id="clear">全消去</button>
+        <button class="ghost" id="resort" data-i18n="resort">ファイル名順</button>
+        <button class="ghost" id="clear" data-i18n="clear">全消去</button>
       </span>
     </div>
     <div id="list"></div>
 
-    <h2 style="margin-top:18px">3. 設定</h2>
+    <h2 style="margin-top:18px" data-i18n="hSettings">3. 設定</h2>
     <div class="row">
-      <label>下絵の色</label>
+      <label data-i18n="tint">下絵の色</label>
       <select id="tint">
-        <option value="none" selected>そのまま</option>
-        <option value="blue">水色（ノンフォト）</option>
+        <option value="none" selected data-i18n="optNone">そのまま</option>
+        <option value="blue" data-i18n="optBlue">水色（ノンフォト）</option>
       </select>
     </div>
     <div class="row">
-      <label>下絵の濃さ</label>
+      <label data-i18n="opacity">下絵の濃さ</label>
       <div class="seg">
         <button data-op="10">10%</button>
         <button data-op="20" class="on">20%</button>
@@ -164,7 +171,7 @@
     </div>
     <input type="range" id="opslider" min="3" max="100" step="1" value="20">
     <div class="row">
-      <label>枠の濃さ</label>
+      <label data-i18n="fopacity">枠の濃さ</label>
       <div class="seg">
         <button data-fop="40">40%</button>
         <button data-fop="70">70%</button>
@@ -174,59 +181,59 @@
     </div>
     <input type="range" id="fopslider" min="10" max="100" step="1" value="100">
     <div class="row">
-      <label>パーフォレーション</label>
+      <label data-i18n="perf">パーフォレーション</label>
       <select id="perf">
-        <option value="auto" selected>入れる（縁が狭い幅では自動で省略）</option>
-        <option value="off">入れない</option>
+        <option value="auto" selected data-i18n="optPerfAuto">入れる（縁が狭い幅では自動で省略）</option>
+        <option value="off" data-i18n="optPerfOff">入れない</option>
       </select>
     </div>
     <div class="row">
-      <label>収め方</label>
+      <label data-i18n="fit">収め方</label>
       <select id="fit">
-        <option value="contain">全体を入れる</option>
-        <option value="cover">枠いっぱい（切る）</option>
-        <option value="stretch">引き伸ばす</option>
+        <option value="contain" data-i18n="optContain">全体を入れる</option>
+        <option value="cover" data-i18n="optCover">枠いっぱい（切る）</option>
+        <option value="stretch" data-i18n="optStretch">引き伸ばす</option>
       </select>
     </div>
     <div class="row">
-      <label>並び順</label>
+      <label data-i18n="order">並び順</label>
       <select id="order">
-        <option value="col">縦（列ごとに上から下）</option>
-        <option value="row">横（行ごとに左から右）</option>
+        <option value="col" data-i18n="optCol">縦（列ごとに上から下）</option>
+        <option value="row" data-i18n="optRow">横（行ごとに左から右）</option>
       </select>
     </div>
     <div class="row">
-      <label>番号の数え方</label>
+      <label data-i18n="numMode">番号の数え方</label>
       <select id="numMode">
-        <option value="serial">通し番号（1, 2, 3 …）</option>
-        <option value="cycle" selected>秒で括る（1〜24, 1〜24 …）</option>
+        <option value="serial" data-i18n="optSerial">通し番号（1, 2, 3 …）</option>
+        <option value="cycle" selected data-i18n="optCycle">秒で括る（1〜24, 1〜24 …）</option>
       </select>
     </div>
     <div class="row" id="cycRow">
-      <label>1秒のコマ数</label>
+      <label data-i18n="cycle">1秒のコマ数</label>
       <input type="number" id="cycle" value="24" min="1" max="999">
       <label style="min-width:0;display:flex;align-items:center;gap:5px;color:var(--sub);font-size:12px">
-        <input type="checkbox" id="withSec"> 秒数も（2-12）
+        <input type="checkbox" id="withSec"> <span data-i18n="withSec">秒数も（2-12）</span>
       </label>
     </div>
     <div class="row">
-      <label>開始コマ</label>
+      <label data-i18n="start">開始コマ</label>
       <input type="number" id="start" value="1" min="1">
-      <label style="min-width:0;color:var(--sub);font-size:12px">解像度</label>
+      <label style="min-width:0;color:var(--sub);font-size:12px" data-i18n="res">解像度</label>
       <select id="res" style="flex:none;width:88px">
-        <option value="500">軽量</option>
-        <option value="800" selected>標準</option>
-        <option value="1400">高精細</option>
+        <option value="500" data-i18n="optLight">軽量</option>
+        <option value="800" selected data-i18n="optStd">標準</option>
+        <option value="1400" data-i18n="optHigh">高精細</option>
       </select>
     </div>
     <div class="row">
-      <label>ファイル名</label>
+      <label data-i18n="fname">ファイル名</label>
       <input type="text" id="fname" value="sheet">
     </div>
-    <button class="primary" id="export">PDFを書き出す</button>
+    <button class="primary" id="export" data-i18n="exportBlank">PDFを書き出す</button>
     <div class="status" id="status"></div>
 
-    <div class="help">
+    <div class="help" data-i18n-html="helpHtml">
       印刷は必ず「実際のサイズ（100%）」で。四隅の3つの黒い四角（トンボ）はスキャン時の
       位置合わせに使うので、切ったり隠したりしないでください。<br>
       帯はフィルム外形の線で切り出すと、そのまま撮影ガイドの通り道に入ります。
@@ -234,7 +241,7 @@
   </div>
 
   <div class="panel">
-    <h2>プレビュー</h2>
+    <h2 data-i18n="preview">プレビュー</h2>
     <div class="pager">
       <button class="ghost" id="prev">◀</button>
       <span class="mono" id="pageno">1 / 1</span>
@@ -258,6 +265,329 @@
    at     : 'line' コマ境界／'center' コマ中央／'span' コマ内に等間隔
    rot    : 横送り（IMAX・VistaVision）。用紙の上では絵が90°倒れる
    ===================================================================== */
+/* ===== 表示言語（日本語・英語・韓国語） =====
+   画面の文字は data-i18n / data-i18n-html のキーで差し替える。日本語にないキーはそのまま表示 */
+const I18N = {
+ "ja": {
+  "note": "実際のフィルム規格の寸法 / スキャン用トンボ付き",
+  "hPaper": "1. 用紙とフィルム",
+  "hUnder": "2. 下絵（任意）",
+  "hSettings": "3. 設定",
+  "preview": "プレビュー",
+  "paper": "用紙",
+  "film": "フィルム",
+  "aspect": "画面比",
+  "video": "動画",
+  "vmode": "コマの拾い方",
+  "vint": "間隔",
+  "vth": "変化の量",
+  "vrange": "使う範囲",
+  "sec": "秒",
+  "vtone": "下絵の作り方",
+  "contrast": "コントラスト",
+  "white": "白飛ばし",
+  "edgeBoost": "輪郭強調",
+  "tint": "下絵の色",
+  "opacity": "下絵の濃さ",
+  "fopacity": "枠の濃さ",
+  "perf": "パーフォレーション",
+  "fit": "収め方",
+  "order": "並び順",
+  "numMode": "番号の数え方",
+  "cycle": "1秒のコマ数",
+  "start": "開始コマ",
+  "res": "解像度",
+  "fname": "ファイル名",
+  "vclose": "外す",
+  "vgrab": "コマを取り込む",
+  "resort": "ファイル名順",
+  "clear": "全消去",
+  "optFps": "一定間隔",
+  "optChange": "変化したところだけ",
+  "opt12": "12 fps（2コマ打ち相当）",
+  "opt8": "8 fps（3コマ打ち相当）",
+  "optGray": "グレースケール",
+  "optColor": "カラーのまま",
+  "optEdge": "輪郭だけ（線画化）",
+  "optNone": "そのまま",
+  "optBlue": "水色（ノンフォト）",
+  "optPerfAuto": "入れる（縁が狭い幅では自動で省略）",
+  "optPerfOff": "入れない",
+  "optContain": "全体を入れる",
+  "optCover": "枠いっぱい（切る）",
+  "optStretch": "引き伸ばす",
+  "optCol": "縦（列ごとに上から下）",
+  "optRow": "横（行ごとに左から右）",
+  "optSerial": "通し番号（1, 2, 3 …）",
+  "optCycle": "秒で括る（1〜24, 1〜24 …）",
+  "optLight": "軽量",
+  "optStd": "標準",
+  "optHigh": "高精細",
+  "appTitle": "ペーパーフィルムジェネレーター",
+  "withSec": "秒数も（2-12）",
+  "dropHtml": "<strong>画像・動画をドロップ</strong>\n      連番画像でも、実写やピクシレーションの動画でも<br>入れなければ白紙の用紙になります",
+  "helpHtml": "印刷は必ず「実際のサイズ（100%）」で。四隅の3つの黒い四角（トンボ）はスキャン時の\n      位置合わせに使うので、切ったり隠したりしないでください。<br>\n      帯はフィルム外形の線で切り出すと、そのまま撮影ガイドの通り道に入ります。",
+  "custom": "自作",
+  "vinfo": "{name}（{d}秒 / {w}×{h}）",
+  "vLoaded": "動画を読み込みました。拾い方を決めて「コマを取り込む」を押してください。",
+  "vError": "この動画は読み込めません（H.264のmp4かwebmをお試しください）。",
+  "rangeBad": "範囲が正しくありません。",
+  "grabbing": "取り込み中… {n}コマ（{t}秒）",
+  "grabbed": "{n}コマ取り込みました（{s}枚ぶん）。",
+  "tinting": "色を置き換え中… {i} / {n}",
+  "needFiles": "画像か動画のファイルを入れてください。",
+  "loading": "読み込み中… {i} / {n}",
+  "loadedNg": "{ok}枚を読み込み、{ng}枚は読めませんでした。",
+  "loaded": "{ok}枚を読み込みました。",
+  "specFilm": "フィルム幅 <b>{film} mm</b>／画面 <b>{w} × {h} mm</b>",
+  "specRatio": "（{r}:1{ana}）",
+  "specAna": "・アナモ{s}倍",
+  "specPitch": "1コマ送り <b>{p} mm</b>",
+  "specPerf": "／パーフ {w}×{h}mm を1コマに{n}個・{side}",
+  "both": "両側",
+  "one": "片側",
+  "specLayout": "{paper}に <b>{c}列 × {r}段 = {n}コマ</b>（24fpsで {sec}秒）",
+  "specScan": "600dpiスキャンで 1コマ {w} × {h} px",
+  "specRot": "<b>※横送りの規格です。</b>絵は左に90°倒して描きます（枠の左の目印が天）",
+  "specNoPerf": "※パーフォレーションなし",
+  "count": "{n} 枚 / {p} ページ",
+  "exportPdf": "PDFを書き出す",
+  "exportBlank": "白紙の用紙を書き出す",
+  "making": "PDFを作成中…",
+  "exported": "書き出しました（{p}ページ）。",
+  "failed": "失敗："
+ },
+ "en": {
+  "note": "Real film-format dimensions / registration marks for scanning",
+  "hPaper": "1. Paper & film",
+  "hUnder": "2. Underlay (optional)",
+  "hSettings": "3. Settings",
+  "preview": "Preview",
+  "paper": "Paper",
+  "film": "Film",
+  "aspect": "Aspect",
+  "video": "Video",
+  "vmode": "Frame picking",
+  "vint": "Rate",
+  "vth": "Change amount",
+  "vrange": "Range",
+  "sec": "s",
+  "vtone": "Underlay style",
+  "contrast": "Contrast",
+  "white": "White point",
+  "edgeBoost": "Edge boost",
+  "tint": "Underlay color",
+  "opacity": "Underlay opacity",
+  "fopacity": "Frame lines",
+  "perf": "Perforations",
+  "fit": "Fit",
+  "order": "Order",
+  "numMode": "Numbering",
+  "cycle": "Frames / sec",
+  "start": "Start frame",
+  "res": "Resolution",
+  "fname": "File name",
+  "vclose": "Remove",
+  "vgrab": "Import frames",
+  "resort": "Sort by name",
+  "clear": "Clear all",
+  "optFps": "Fixed rate",
+  "optChange": "Only when it changes",
+  "opt12": "12 fps (on twos)",
+  "opt8": "8 fps (on threes)",
+  "optGray": "Grayscale",
+  "optColor": "Keep color",
+  "optEdge": "Outlines only (line art)",
+  "optNone": "As is",
+  "optBlue": "Light blue (non-photo)",
+  "optPerfAuto": "Include (omitted if the margin is too narrow)",
+  "optPerfOff": "None",
+  "optContain": "Fit whole image",
+  "optCover": "Fill frame (crop)",
+  "optStretch": "Stretch",
+  "optCol": "Vertical (top to bottom, column by column)",
+  "optRow": "Horizontal (left to right, row by row)",
+  "optSerial": "Serial (1, 2, 3 …)",
+  "optCycle": "Per second (1–24, 1–24 …)",
+  "optLight": "Light",
+  "optStd": "Standard",
+  "optHigh": "High",
+  "appTitle": "Paper Film Generator",
+  "withSec": "With seconds (2-12)",
+  "dropHtml": "<strong>Drop images or videos</strong>\n      Image sequences, live action or pixilation videos<br>Leave empty to get blank sheets",
+  "helpHtml": "Always print at “Actual size (100%)”. The three black squares in the corners (registration marks) are used to\n      align the scan, so do not cut or cover them.<br>\n      Cut the strips along the film outline and they fit straight into the path of the shooting guide.",
+  "custom": "Custom",
+  "vinfo": "{name} ({d} s / {w}×{h})",
+  "vLoaded": "Video loaded. Choose how to pick frames, then press “Import frames”.",
+  "vError": "This video cannot be read (try an H.264 mp4 or webm).",
+  "rangeBad": "The range is not valid.",
+  "grabbing": "Importing… {n} frames ({t} s)",
+  "grabbed": "Imported {n} frames ({s} sheets).",
+  "tinting": "Recoloring… {i} / {n}",
+  "needFiles": "Please add image or video files.",
+  "loading": "Loading… {i} / {n}",
+  "loadedNg": "Loaded {ok} files; {ng} could not be read.",
+  "loaded": "Loaded {ok} files.",
+  "specFilm": "Film width <b>{film} mm</b> / image <b>{w} × {h} mm</b>",
+  "specRatio": " ({r}:1{ana})",
+  "specAna": ", {s}× anamorphic",
+  "specPitch": "Frame pitch <b>{p} mm</b>",
+  "specPerf": " / perfs {w}×{h} mm, {n} per frame, {side}",
+  "both": "both sides",
+  "one": "one side",
+  "specLayout": "{paper}: <b>{c} columns × {r} rows = {n} frames</b> ({sec} s at 24 fps)",
+  "specScan": "Scanned at 600 dpi: {w} × {h} px per frame",
+  "specRot": "<b>Note: horizontal-feed format.</b> Draw the picture turned 90° to the left (the tick left of each frame marks the top).",
+  "specNoPerf": "Note: no perforations",
+  "count": "Images: {n} / Pages: {p}",
+  "exportPdf": "Export PDF",
+  "exportBlank": "Export blank sheets",
+  "making": "Creating PDF…",
+  "exported": "Exported ({p} pages).",
+  "failed": "Failed: ",
+  "fmt_r8": "Regular 8 (Double 8)",
+  "fmt_s8": "Super 8",
+  "fmt_r16": "16mm Standard (double perf)",
+  "fmt_s16": "Super 16",
+  "fmt_ac35": "35mm Academy (4-perf)",
+  "fmt_fa35": "35mm Full Aperture / Super 35",
+  "fmt_sc35": "35mm CinemaScope (2× anamorphic)",
+  "fmt_vi35": "35mm Flat 1.85 (projection mask)",
+  "fmt_tc35": "35mm Techniscope (2-perf)",
+  "fmt_vv35": "VistaVision (8-perf horizontal)",
+  "fmt_td70": "70mm 5-perf (Todd-AO)",
+  "fmt_im70": "IMAX 15/70 (15-perf horizontal)",
+  "fmt_c45": "Custom 45mm",
+  "fmt_c50": "Custom 50mm"
+ },
+ "ko": {
+  "note": "실제 필름 규격 치수 / 스캔용 맞춤 표시 포함",
+  "hPaper": "1. 용지와 필름",
+  "hUnder": "2. 밑그림 (선택)",
+  "hSettings": "3. 설정",
+  "preview": "미리보기",
+  "paper": "용지",
+  "film": "필름",
+  "aspect": "화면비",
+  "video": "동영상",
+  "vmode": "프레임 추출",
+  "vint": "간격",
+  "vth": "변화량",
+  "vrange": "사용 범위",
+  "sec": "초",
+  "vtone": "밑그림 방식",
+  "contrast": "대비",
+  "white": "화이트 포인트",
+  "edgeBoost": "윤곽 강조",
+  "tint": "밑그림 색",
+  "opacity": "밑그림 농도",
+  "fopacity": "테두리 농도",
+  "perf": "퍼포레이션",
+  "fit": "맞춤 방식",
+  "order": "배열 순서",
+  "numMode": "번호 매기기",
+  "cycle": "초당 프레임",
+  "start": "시작 프레임",
+  "res": "해상도",
+  "fname": "파일 이름",
+  "vclose": "빼기",
+  "vgrab": "프레임 가져오기",
+  "resort": "파일 이름순",
+  "clear": "모두 지우기",
+  "optFps": "일정 간격",
+  "optChange": "변화한 부분만",
+  "opt12": "12 fps (2프레임 홀드 상당)",
+  "opt8": "8 fps (3프레임 홀드 상당)",
+  "optGray": "그레이스케일",
+  "optColor": "컬러 그대로",
+  "optEdge": "윤곽만 (선화로)",
+  "optNone": "그대로",
+  "optBlue": "하늘색 (논포토 블루)",
+  "optPerfAuto": "넣기 (가장자리가 좁으면 자동 생략)",
+  "optPerfOff": "넣지 않기",
+  "optContain": "전체 넣기",
+  "optCover": "프레임 가득 (자르기)",
+  "optStretch": "늘리기",
+  "optCol": "세로 (열마다 위에서 아래로)",
+  "optRow": "가로 (행마다 왼쪽에서 오른쪽으로)",
+  "optSerial": "일련번호 (1, 2, 3 …)",
+  "optCycle": "초 단위 (1~24, 1~24 …)",
+  "optLight": "가볍게",
+  "optStd": "표준",
+  "optHigh": "고화질",
+  "appTitle": "페이퍼 필름 제너레이터",
+  "withSec": "초도 표시 (2-12)",
+  "dropHtml": "<strong>이미지·동영상을 드롭</strong>\n      연번 이미지도, 실사나 픽실레이션 동영상도 OK<br>넣지 않으면 빈 용지가 됩니다",
+  "helpHtml": "인쇄는 반드시 “실제 크기(100%)”로 하세요. 모서리의 검은 사각형 3개(맞춤 표시)는 스캔할 때\n      위치를 맞추는 데 쓰이므로 자르거나 가리지 마세요.<br>\n      필름 외곽선을 따라 띠를 잘라내면 그대로 촬영 가이드의 통로에 들어갑니다.",
+  "custom": "자작",
+  "vinfo": "{name} ({d}초 / {w}×{h})",
+  "vLoaded": "동영상을 불러왔습니다. 추출 방식을 정하고 “프레임 가져오기”를 누르세요.",
+  "vError": "이 동영상은 읽을 수 없습니다 (H.264 mp4나 webm을 사용해 보세요).",
+  "rangeBad": "범위가 올바르지 않습니다.",
+  "grabbing": "가져오는 중… {n}프레임 ({t}초)",
+  "grabbed": "{n}프레임을 가져왔습니다 ({s}장 분량).",
+  "tinting": "색 바꾸는 중… {i} / {n}",
+  "needFiles": "이미지나 동영상 파일을 넣어 주세요.",
+  "loading": "불러오는 중… {i} / {n}",
+  "loadedNg": "{ok}장을 불러왔고, {ng}장은 읽지 못했습니다.",
+  "loaded": "{ok}장을 불러왔습니다.",
+  "specFilm": "필름 폭 <b>{film} mm</b> / 화면 <b>{w} × {h} mm</b>",
+  "specRatio": " ({r}:1{ana})",
+  "specAna": ", 아나모픽 {s}배",
+  "specPitch": "1프레임 이송 <b>{p} mm</b>",
+  "specPerf": " / 퍼포 {w}×{h}mm, 1프레임에 {n}개, {side}",
+  "both": "양쪽",
+  "one": "한쪽",
+  "specLayout": "{paper}에 <b>{c}열 × {r}단 = {n}프레임</b> (24fps로 {sec}초)",
+  "specScan": "600dpi 스캔 시 1프레임 {w} × {h} px",
+  "specRot": "<b>※가로 주행 규격입니다.</b> 그림은 왼쪽으로 90° 눕혀서 그립니다 (프레임 왼쪽 표시가 위쪽).",
+  "specNoPerf": "※퍼포레이션 없음",
+  "count": "{n}장 / {p}페이지",
+  "exportPdf": "PDF 내보내기",
+  "exportBlank": "빈 용지 내보내기",
+  "making": "PDF 만드는 중…",
+  "exported": "내보냈습니다 ({p}페이지).",
+  "failed": "실패: ",
+  "fmt_r8": "레귤러 8 (더블 8)",
+  "fmt_s8": "슈퍼 8",
+  "fmt_r16": "16mm 표준 (양쪽 퍼포)",
+  "fmt_s16": "슈퍼 16",
+  "fmt_ac35": "35mm 아카데미 (4퍼포)",
+  "fmt_fa35": "35mm 풀 애퍼처 / 슈퍼 35",
+  "fmt_sc35": "35mm 시네마스코프 (2배 아나모픽)",
+  "fmt_vi35": "35mm 비스타 1.85 (영사 마스크)",
+  "fmt_tc35": "35mm 테크니스코프 (2퍼포)",
+  "fmt_vv35": "비스타비전 (8퍼포 가로 주행)",
+  "fmt_td70": "70mm 5퍼포 (Todd-AO)",
+  "fmt_im70": "IMAX 15/70 (15퍼포 가로 주행)",
+  "fmt_c45": "자작 45mm",
+  "fmt_c50": "자작 50mm"
+ }
+};
+let LANG = 'ja';
+function tr(k, p){
+  let s = (I18N[LANG] || {})[k] ?? I18N.ja[k] ?? k;
+  if(p) s = s.replace(/\{(\w+)\}/g, (m, n) => n in p ? p[n] : m);
+  return s;
+}
+const fmtLabel = f => LANG === 'ja' ? f.label : tr('fmt_' + f.key);
+function applyLang(lang){
+  LANG = I18N[lang] ? lang : 'ja';
+  document.documentElement.lang = LANG;
+  document.title = tr('appTitle');
+  document.querySelectorAll('[data-i18n]').forEach(e => e.textContent = tr(e.dataset.i18n));
+  document.querySelectorAll('[data-i18n-html]').forEach(e => e.innerHTML = tr(e.dataset.i18nHtml));
+  document.getElementById('lang').value = LANG;
+  try{ localStorage.setItem('pfg:lang', LANG); }catch(e){}
+}
+function initialLang(){
+  const q = new URLSearchParams(location.search).get('lang');
+  if(I18N[q]) return q;
+  try{ const s = localStorage.getItem('pfg:lang'); if(I18N[s]) return s; }catch(e){}
+  const n = (navigator.language || 'ja').slice(0, 2);
+  return n === 'ja' || n === 'ko' ? n : 'en';
+}
+
 const MM = 72 / 25.4;
 const PAPERS = {A5: [148, 210], A4: [210, 297], A3: [297, 420]};
 const PAGE = {w: 210, h: 297};
@@ -403,13 +733,15 @@ function template(){
 let TPL = template();
 function buildFormatMenu(){
   const sel = document.getElementById('fmt');
+  const keep = sel.value || 'ac35';
+  sel.innerHTML = '';
   let gr = null, og = null;
   for(const f of FORMATS){
-    if(f.group !== gr){ gr = f.group; og = document.createElement('optgroup'); og.label = gr; sel.appendChild(og); }
+    if(f.group !== gr){ gr = f.group; og = document.createElement('optgroup'); og.label = gr === '自作' ? tr('custom') : gr; sel.appendChild(og); }
     const o = document.createElement('option');
-    o.value = f.key; o.textContent = f.label; og.appendChild(o);
+    o.value = f.key; o.textContent = fmtLabel(f); og.appendChild(o);
   }
-  sel.value = 'ac35';
+  sel.value = keep;
 }
 function numberSpot(f){          // フィルムの外側（作画範囲の外）に縦書き
   return {x: f.x - SP.left * MM + (SP.film + 1.0) * MM, y: f.y + f.h - 0.8 * MM, rot: -90, size: SP.numSize};
@@ -468,12 +800,12 @@ function openVideo(file){
   v.onloadedmetadata = () => {
     vsrc = {file, url, v, dur: v.duration};
     $('vpanel').style.display = 'block';
-    $('vinfo').textContent = `${file.name}（${v.duration.toFixed(1)}秒 / ${v.videoWidth}×${v.videoHeight}）`;
+    $('vinfo').textContent = tr('vinfo', {name: file.name, d: v.duration.toFixed(1), w: v.videoWidth, h: v.videoHeight});
     $('vin').value = 0; $('vout').value = Math.round(v.duration * 10) / 10;
     $('vin').max = $('vout').max = Math.round(v.duration * 10) / 10;
-    status('動画を読み込みました。拾い方を決めて「コマを取り込む」を押してください。');
+    status(tr('vLoaded'));
   };
-  v.onerror = () => status('この動画は読み込めません（H.264のmp4かwebmをお試しください）。', true);
+  v.onerror = () => status(tr('vError'), true);
 }
 function closeVideo(){
   if(vsrc) URL.revokeObjectURL(vsrc.url);
@@ -527,7 +859,7 @@ async function grabFrames(){
   const v = vsrc.v;
   const t0 = Math.max(0, parseFloat($('vin').value) || 0);
   const t1 = Math.min(vsrc.dur, parseFloat($('vout').value) || vsrc.dur);
-  if(t1 <= t0){ status('範囲が正しくありません。', true); return; }
+  if(t1 <= t0){ status(tr('rangeBad'), true); return; }
   const byChange = $('vmode').value === 'change';
   const step = 1 / (byChange ? 24 : parseFloat($('vfps').value));
   const th = parseFloat($('vth').value);
@@ -572,10 +904,10 @@ async function grabFrames(){
     n++;
     const th = tv.toDataURL('image/jpeg', 0.6);
     items.push({name: `v${String(n).padStart(4, '0')}`, bytes, w, h, thumb: th, orig: bytes, origThumb: th});
-    if(n % 3 === 0) status(`取り込み中… ${n}コマ（${t.toFixed(1)}秒）`);
+    if(n % 3 === 0) status(tr('grabbing', {n, t: t.toFixed(1)}));
   }
   await applyTint();
-  status(`${n}コマ取り込みました（${(n / SP.perPage).toFixed(2)}枚ぶん）。`);
+  status(tr('grabbed', {n, s: (n / SP.perPage).toFixed(2)}));
 }
 
 /* 下絵を水色（ノンフォトブルー）に置き換える。白は白のまま、濃いところほど青くなる */
@@ -608,7 +940,7 @@ async function applyTint(from = 0){
     const it = items[i];
     if(!blue){ it.bytes = it.orig; it.thumb = it.origThumb; continue; }
     if(it.tinted) continue;
-    status(`色を置き換え中… ${i + 1} / ${items.length}`);
+    status(tr('tinting', {i: i + 1, n: items.length}));
     await tintItem(it);
   }
   items.forEach(it => it.tinted = blue);
@@ -619,16 +951,16 @@ async function addFiles(files){
   const vid = [...files].find(f => /^video\//.test(f.type));
   if(vid){ openVideo(vid); return; }
   const list = [...files].filter(f => /^image\//.test(f.type));
-  if(!list.length){ status('画像か動画のファイルを入れてください。', true); return; }
+  if(!list.length){ status(tr('needFiles'), true); return; }
   const maxDim = parseInt($('res').value, 10);
   let ok = 0, ng = 0;
   for(let i = 0; i < list.length; i++){
-    status(`読み込み中… ${i + 1} / ${list.length}`);
+    status(tr('loading', {i: i + 1, n: list.length}));
     try{ const b = await createImageBitmap(list[i]); items.push({name: list[i].name, ...(await toJpeg(b, maxDim))}); b.close(); ok++; }
     catch(e){ ng++; }
   }
   sortItems(); await applyTint(); 
-  status(ng ? `${ok}枚を読み込み、${ng}枚は読めませんでした。` : `${ok}枚を読み込みました。`, ng > 0);
+  status(ng ? tr('loadedNg', {ok, ng}) : tr('loaded', {ok}), ng > 0);
 }
 
 function showSpec(){
@@ -636,14 +968,14 @@ function showSpec(){
   const f = FMT[SP.key];
   const img = SP.custom ? [SP.capW, SP.capH] : (SP.rot ? [f.along, f.across] : [f.across, f.along]);
   $('spec').innerHTML =
-    `フィルム幅 <b>${SP.film.toFixed(2)} mm</b>／画面 <b>${img[0].toFixed(2)} × ${img[1].toFixed(2)} mm</b>` +
-    `（${SP.ratio.toFixed(2)}:1${SP.squeeze > 1 ? '・アナモ' + SP.squeeze + '倍' : ''}）<br>` +
-    `1コマ送り <b>${SP.pitch.toFixed(3)} mm</b>` +
-    (SP.custom ? '' : `／パーフ ${SP.perf.w}×${SP.perf.h}mm を1コマに${SP.perf.per}個・${SP.perf.sides === 2 ? '両側' : '片側'}`) + '<br>' +
-    `${$('paper').value}に <b>${SP.cols}列 × ${SP.rows}段 = ${SP.perPage}コマ</b>（24fpsで ${(SP.perPage / 24).toFixed(2)}秒）<br>` +
-    `600dpiスキャンで 1コマ ${px(SP.capW)} × ${px(SP.capH)} px` +
-    (SP.rot ? '<br><b>※横送りの規格です。</b>絵は左に90°倒して描きます（枠の左の目印が天）' : '') +
-    (perfOn() ? '' : '<br>※パーフォレーションなし');
+    tr('specFilm', {film: SP.film.toFixed(2), w: img[0].toFixed(2), h: img[1].toFixed(2)}) +
+    tr('specRatio', {r: SP.ratio.toFixed(2), ana: SP.squeeze > 1 ? tr('specAna', {s: SP.squeeze}) : ''}) + '<br>' +
+    tr('specPitch', {p: SP.pitch.toFixed(3)}) +
+    (SP.custom ? '' : tr('specPerf', {w: SP.perf.w, h: SP.perf.h, n: SP.perf.per, side: tr(SP.perf.sides === 2 ? 'both' : 'one')})) + '<br>' +
+    tr('specLayout', {paper: $('paper').value, c: SP.cols, r: SP.rows, n: SP.perPage, sec: (SP.perPage / 24).toFixed(2)}) + '<br>' +
+    tr('specScan', {w: px(SP.capW), h: px(SP.capH)}) +
+    (SP.rot ? '<br>' + tr('specRot') : '') +
+    (perfOn() ? '' : '<br>' + tr('specNoPerf'));
 }
 function refresh(){
   const box = $('list'); box.innerHTML = '';
@@ -656,8 +988,8 @@ function refresh(){
     box.appendChild(d);
   });
   const pc = Math.max(1, pageCount());
-  $('count').textContent = `${items.length} 枚 / ${pc} ページ`;
-  $('export').textContent = items.length ? 'PDFを書き出す' : '白紙の用紙を書き出す';
+  $('count').textContent = tr('count', {n: items.length, p: pc});
+  $('export').textContent = tr(items.length ? 'exportPdf' : 'exportBlank');
   $('start').max = SP.perPage;
   if(page >= pc) page = pc - 1;
   $('pageno').textContent = `${page + 1} / ${pc}`;
@@ -883,7 +1215,7 @@ $('start').onchange = () => { page = 0; refresh(); };
 $('prev').onclick = () => { if(page > 0){ page--; refresh(); } };
 $('next').onclick = () => { if(page < pageCount() - 1){ page++; refresh(); } };
 $('export').onclick = () => {
-  status('PDFを作成中…');
+  status(tr('making'));
   setTimeout(() => {
     try{
       const bytes = buildPdf();
@@ -891,10 +1223,12 @@ $('export').onclick = () => {
       const a = document.createElement('a'); a.href = url;
       a.download = `${$('fname').value || 'sheet'}_${SP.key}_${$('paper').value}.pdf`; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
-      status(`書き出しました（${pageCount()}ページ）。`);
-    }catch(e){ status('失敗：' + e.message, true); }
+      status(tr('exported', {p: pageCount()}));
+    }catch(e){ status(tr('failed') + e.message, true); }
   }, 30);
 };
+$('lang').onchange = () => { applyLang($('lang').value); buildFormatMenu(); refresh(); status(''); };
+applyLang(initialLang());
 buildFormatMenu();
 reLayout();
 </script>
