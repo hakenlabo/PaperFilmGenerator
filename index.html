@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作画用紙ジェネレーター</title>
+<style>
+  :root{--paper:#fff;--desk:#e8ecef;--ink:#16191c;--sub:#5d666e;--line:#c9d1d8;--blue:#2f6fb5;--blue-soft:#dceaf8;--amber:#c98a1e}
+  *{box-sizing:border-box} html,body{margin:0;padding:0}
+  body{background:var(--desk);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Arial,sans-serif;font-size:14px;line-height:1.6}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px 16px 60px}
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  h1{font-size:18px;margin:0;letter-spacing:.04em}
+  header .note{color:var(--sub);font-size:12px}
+  .cols{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start}
+  @media (max-width:900px){.cols{grid-template-columns:1fr}}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px}
+  .panel h2{font-size:12px;letter-spacing:.12em;color:var(--sub);margin:0 0 10px;font-weight:600}
+  .drop{border:2px dashed var(--line);border-radius:6px;padding:18px 12px;text-align:center;color:var(--sub);cursor:pointer;background:#fbfcfd}
+  .drop:hover,.drop.hot{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+  .drop strong{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+  .row{display:flex;align-items:center;gap:8px;margin:10px 0}
+  .row label{min-width:78px;color:var(--sub);font-size:12px}
+  select,input[type=number],input[type=text]{font:inherit;font-size:13px;padding:5px 7px;border:1px solid var(--line);border-radius:4px;background:#fff}
+  select{flex:1;min-width:0} input[type=number]{width:72px} input[type=text]{flex:1;min-width:0}
+  .seg{display:flex;gap:6px}
+  .seg button{font:inherit;font-size:13px;padding:6px 12px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;color:var(--sub)}
+  .seg button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  input[type=range]{width:100%;accent-color:var(--blue)}
+  .mono{font-family:Menlo,Consolas,monospace}
+  button.primary{width:100%;font:inherit;font-size:15px;font-weight:600;padding:11px;margin-top:6px;background:var(--ink);color:#fff;border:0;border-radius:5px;cursor:pointer}
+  button.primary:hover{background:var(--blue)}
+  .ghost{font:inherit;font-size:12px;padding:5px 10px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;color:var(--sub)}
+  .ghost:hover{border-color:var(--blue);color:var(--blue)}
+  #list{max-height:170px;overflow:auto;margin-top:10px;border-top:1px solid var(--line)}
+  #list .item{display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid #eef1f4;cursor:grab}
+  #list .item.drag{opacity:.4}
+  #list .num{font-family:Menlo,Consolas,monospace;font-size:11px;color:var(--blue);width:28px;text-align:right}
+  #list img{width:40px;height:23px;object-fit:contain;background:#f2f5f7;border:1px solid var(--line)}
+  #list .name{flex:1;font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #list .x{border:0;background:none;color:#b9c2c9;cursor:pointer;font-size:15px}
+  .pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;color:var(--sub);font-size:12px}
+  canvas{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .status{font-size:12px;color:var(--sub);margin-top:8px;min-height:1.6em}
+  .status.warn{color:var(--amber)}
+  .spec{font-size:11.5px;color:var(--sub);margin-top:8px;padding:9px 10px;background:#f6f8fa;border-radius:4px;line-height:1.7}
+  .spec b{color:var(--ink);font-weight:600}
+  .help{font-size:11.5px;color:var(--sub);margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>作画用紙ジェネレーター</h1>
+  <span class="note">実際のフィルム規格の寸法 / スキャン用トンボ付き</span>
+</header>
+
+<div class="cols">
+  <div class="panel">
+    <h2>1. 用紙とフィルム</h2>
+    <div class="row">
+      <label>用紙</label>
+      <select id="paper">
+        <option value="A5">A5（148 × 210）</option>
+        <option value="A4" selected>A4（210 × 297）</option>
+        <option value="A3">A3（297 × 420）</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>フィルム</label>
+      <select id="fmt"></select>
+    </div>
+    <div class="row" id="aspectRow" style="display:none">
+      <label>画面比</label>
+      <select id="aspect">
+        <option value="1.7778" selected>16:9</option>
+        <option value="1.3333">4:3</option>
+      </select>
+    </div>
+    <div class="spec" id="spec"></div>
+
+    <h2 style="margin-top:18px">2. 下絵（任意）</h2>
+    <div class="drop" id="drop">
+      <strong>画像・動画をドロップ</strong>
+      連番画像でも、実写やピクシレーションの動画でも<br>入れなければ白紙の用紙になります
+    </div>
+    <div id="vpanel" style="display:none;border:1px solid var(--line);border-radius:5px;padding:10px;margin-top:10px;background:#fbfcfd">
+      <div class="row" style="margin-top:0">
+        <label>動画</label>
+        <span class="mono" id="vinfo" style="font-size:11.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button class="ghost" id="vclose">外す</button>
+      </div>
+      <div class="row">
+        <label>コマの拾い方</label>
+        <select id="vmode">
+          <option value="fps" selected>一定間隔</option>
+          <option value="change">変化したところだけ</option>
+        </select>
+      </div>
+      <div class="row" id="vfpsRow">
+        <label>間隔</label>
+        <select id="vfps">
+          <option value="24">24 fps</option>
+          <option value="12" selected>12 fps（2コマ打ち相当）</option>
+          <option value="8">8 fps（3コマ打ち相当）</option>
+          <option value="4">4 fps</option>
+        </select>
+      </div>
+      <div class="row" id="vthRow" style="display:none">
+        <label>変化の量</label>
+        <input type="range" id="vth" min="1" max="40" value="8" style="flex:1">
+        <span class="mono" id="vthv" style="font-size:12px">8</span>
+      </div>
+      <div class="row">
+        <label>使う範囲</label>
+        <input type="number" id="vin" value="0" min="0" step="0.1" style="width:64px">
+        <span style="color:var(--sub)">〜</span>
+        <input type="number" id="vout" value="0" min="0" step="0.1" style="width:64px">
+        <span style="font-size:12px;color:var(--sub)">秒</span>
+      </div>
+      <div class="row">
+        <label>下絵の作り方</label>
+        <select id="vtone">
+          <option value="gray" selected>グレースケール</option>
+          <option value="color">カラーのまま</option>
+          <option value="edge">輪郭だけ（線画化）</option>
+        </select>
+      </div>
+      <div class="row"><label>コントラスト</label>
+        <input type="range" id="vcon" min="50" max="400" value="150" style="flex:1">
+        <span class="mono" id="vconv" style="font-size:12px">1.5</span></div>
+      <div class="row"><label>白飛ばし</label>
+        <input type="range" id="vwhite" min="120" max="255" value="235" style="flex:1">
+        <span class="mono" id="vwhitev" style="font-size:12px">235</span></div>
+      <div class="row" id="vedgeRow"><label>輪郭強調</label>
+        <input type="range" id="vedge" min="0" max="100" value="0" style="flex:1">
+        <span class="mono" id="vedgev" style="font-size:12px">0</span></div>
+      <button class="primary" id="vgrab" style="font-size:14px;padding:9px">コマを取り込む</button>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <span class="mono" id="count" style="font-size:12px;color:var(--sub)">0 枚</span>
+      <span>
+        <button class="ghost" id="resort">ファイル名順</button>
+        <button class="ghost" id="clear">全消去</button>
+      </span>
+    </div>
+    <div id="list"></div>
+
+    <h2 style="margin-top:18px">3. 設定</h2>
+    <div class="row">
+      <label>下絵の色</label>
+      <select id="tint">
+        <option value="none" selected>そのまま</option>
+        <option value="blue">水色（ノンフォト）</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>下絵の濃さ</label>
+      <div class="seg">
+        <button data-op="10">10%</button>
+        <button data-op="20" class="on">20%</button>
+      </div>
+      <span class="mono" id="opval" style="font-size:12px;color:var(--sub)">20%</span>
+    </div>
+    <input type="range" id="opslider" min="3" max="100" step="1" value="20">
+    <div class="row">
+      <label>枠の濃さ</label>
+      <div class="seg">
+        <button data-fop="40">40%</button>
+        <button data-fop="70">70%</button>
+        <button data-fop="100" class="on">100%</button>
+      </div>
+      <span class="mono" id="fopval" style="font-size:12px;color:var(--sub)">100%</span>
+    </div>
+    <input type="range" id="fopslider" min="10" max="100" step="1" value="100">
+    <div class="row">
+      <label>パーフォレーション</label>
+      <select id="perf">
+        <option value="auto" selected>入れる（縁が狭い幅では自動で省略）</option>
+        <option value="off">入れない</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>収め方</label>
+      <select id="fit">
+        <option value="contain">全体を入れる</option>
+        <option value="cover">枠いっぱい（切る）</option>
+        <option value="stretch">引き伸ばす</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>並び順</label>
+      <select id="order">
+        <option value="col">縦（列ごとに上から下）</option>
+        <option value="row">横（行ごとに左から右）</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>番号の数え方</label>
+      <select id="numMode">
+        <option value="serial">通し番号（1, 2, 3 …）</option>
+        <option value="cycle" selected>秒で括る（1〜24, 1〜24 …）</option>
+      </select>
+    </div>
+    <div class="row" id="cycRow">
+      <label>1秒のコマ数</label>
+      <input type="number" id="cycle" value="24" min="1" max="999">
+      <label style="min-width:0;display:flex;align-items:center;gap:5px;color:var(--sub);font-size:12px">
+        <input type="checkbox" id="withSec"> 秒数も（2-12）
+      </label>
+    </div>
+    <div class="row">
+      <label>開始コマ</label>
+      <input type="number" id="start" value="1" min="1">
+      <label style="min-width:0;color:var(--sub);font-size:12px">解像度</label>
+      <select id="res" style="flex:none;width:88px">
+        <option value="500">軽量</option>
+        <option value="800" selected>標準</option>
+        <option value="1400">高精細</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>ファイル名</label>
+      <input type="text" id="fname" value="sheet">
+    </div>
+    <button class="primary" id="export">PDFを書き出す</button>
+    <div class="status" id="status"></div>
+
+    <div class="help">
+      印刷は必ず「実際のサイズ（100%）」で。四隅の3つの黒い四角（トンボ）はスキャン時の
+      位置合わせに使うので、切ったり隠したりしないでください。<br>
+      帯はフィルム外形の線で切り出すと、そのまま撮影ガイドの通り道に入ります。
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>プレビュー</h2>
+    <div class="pager">
+      <button class="ghost" id="prev">◀</button>
+      <span class="mono" id="pageno">1 / 1</span>
+      <button class="ghost" id="next">▶</button>
+    </div>
+    <canvas id="cv"></canvas>
+  </div>
+</div>
+</div>
+
+<script>
+/* =====================================================================
+   用紙レイアウト（スキャン側と共有する計算）
+   フィルム幅から作画枠・列数・段数・余白まで自動で決める。
+   作画枠 = フィルム幅 × 0.8889 の 16:9。左右にはパーフォレーション用の縁が残る。
+   ===================================================================== */
+/* =====================================================================
+   フィルム規格の実寸表（mm）— 作画用紙・スキャンアプリで共通
+   along  : フィルムの送り方向の画面寸法      across : フィルム幅方向の画面寸法
+   pitch  : 1コマ送り量        perf   : パーフォレーション
+   at     : 'line' コマ境界／'center' コマ中央／'span' コマ内に等間隔
+   rot    : 横送り（IMAX・VistaVision）。用紙の上では絵が90°倒れる
+   ===================================================================== */
+const MM = 72 / 25.4;
+const PAPERS = {A5: [148, 210], A4: [210, 297], A3: [297, 420]};
+const PAGE = {w: 210, h: 297};
+const MIN_MX = 8.0, MIN_MY = 12.0;
+
+const FORMATS = [
+  {key:'r8',   label:'レギュラー8（ダブル8）', group:'8mm',
+   film:7.975, pitch:3.81,   across:4.80,  along:3.50,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.90,per:1,sides:1,at:'line'}, left:2.95},
+  {key:'s8',   label:'スーパー8', group:'8mm',
+   film:7.975, pitch:4.234,  across:5.69,  along:4.22,
+   perf:{w:0.914,h:1.143,r:0.13,edge:0.51,per:1,sides:1,at:'center'}, left:1.47},
+
+  {key:'r16',  label:'16mm 標準（両側パーフ）', group:'16mm',
+   film:16.0,  pitch:7.62,   across:10.26, along:7.49,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.51,per:1,sides:2,at:'line'}, left:2.87},
+  {key:'s16',  label:'スーパー16', group:'16mm',
+   film:16.0,  pitch:7.62,   across:12.52, along:7.41,
+   perf:{w:1.829,h:1.270,r:0.25,edge:0.51,per:1,sides:1,at:'line'}, left:2.93},
+
+  {key:'ac35', label:'35mm アカデミー（4パーフ）', group:'35mm',
+   film:35.0,  pitch:19.05,  across:21.95, along:16.00,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:7.995},
+  {key:'fa35', label:'35mm フルアパーチャー／スーパー35', group:'35mm',
+   film:35.0,  pitch:19.05,  across:24.89, along:18.67,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:5.055},
+  {key:'sc35', label:'35mm シネマスコープ（アナモ2倍）', group:'35mm',
+   film:35.0,  pitch:19.05,  across:21.95, along:18.59,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:7.995, squeeze:2},
+  {key:'vi35', label:'35mm ビスタ 1.85（映写マスク）', group:'35mm',
+   film:35.0,  pitch:19.05,  across:20.96, along:11.33,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:4,sides:2,at:'span'}, left:8.49},
+  {key:'tc35', label:'35mm テクニスコープ（2パーフ）', group:'35mm',
+   film:35.0,  pitch:9.525,  across:21.95, along:9.47,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:2,sides:2,at:'span'}, left:7.995},
+  {key:'vv35', label:'ビスタビジョン（8パーフ横送り）', group:'35mm',
+   film:35.0,  pitch:38.10,  across:24.92, along:37.72, rot:true,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:8,sides:2,at:'span'}, left:5.04},
+
+  {key:'td70', label:'70mm 5パーフ（Todd-AO）', group:'65/70mm',
+   film:70.0,  pitch:23.8125,across:52.63, along:23.01,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:5,sides:2,at:'span'}, left:8.685},
+  {key:'im70', label:'IMAX 15/70（15パーフ横送り）', group:'65/70mm',
+   film:70.0,  pitch:71.4375,across:52.63, along:70.41, rot:true,
+   perf:{w:2.794,h:1.981,r:0.51,edge:1.397,per:15,sides:2,at:'span'}, left:8.685},
+
+  {key:'c45',  label:'自作 45mm', group:'自作', film:45.0, custom:true},
+  {key:'c50',  label:'自作 50mm', group:'自作', film:50.0, custom:true}
+];
+const FMT = Object.fromEntries(FORMATS.map(f => [f.key, f]));
+
+function layout(key, aspect){
+  const f = FMT[key] || FMT.c50;
+  let capW, capH, pitch, left, perf, rot = !!f.rot;
+  if(f.custom){
+    capW = Math.round(f.film * 0.8889 * 10) / 10;
+    capH = capW / (aspect || 16 / 9);
+    pitch = capH;
+    left = (f.film - capW) / 2;
+    const m = left;
+    perf = {w: Math.min(2.0, m * 0.77), h: Math.min(2.0, m * 0.77) * 0.7,
+            r: Math.min(2.0, m * 0.77) * 0.18, edge: (m - Math.min(2.0, m * 0.77)) / 2,
+            per: 4, sides: 2, at: 'span', ok: m >= 1.4};
+  }else{
+    capW = f.across; capH = f.along; pitch = f.pitch; left = f.left;
+    perf = Object.assign({ok: true}, f.perf);
+  }
+  const gutter = Math.max(4.0, f.film * 0.10);
+  const cols = Math.max(1, Math.floor((PAGE.w - 2 * MIN_MX + gutter) / (f.film + gutter)));
+  const rows = Math.max(1, Math.floor((PAGE.h - 2 * MIN_MY) / pitch));
+  const mX = (PAGE.w - (cols * f.film + (cols - 1) * gutter)) / 2;
+  const mY = (PAGE.h - rows * pitch) / 2;
+  const ratio = (rot ? f.along / f.across : capW / capH) * (f.squeeze || 1);   // 映像としての比率（アナモは伸長後）
+  const colCenters = [];
+  for(let c = 0; c < cols; c++) colCenters.push(mX + c * (f.film + gutter) + f.film / 2);
+  return {
+    key, label: f.label, film: f.film, custom: !!f.custom, rot, squeeze: f.squeeze || 1,
+    capW, capH, pitch, left, perf, gutter, cols, rows, mX, mY, ratio,
+    colPitch: f.film + gutter, perPage: cols * rows,
+    numSize: Math.max(3.2, Math.min(6, gutter - 1.6)),
+    marks: [[12, mY / 2], [12, PAGE.h - mY / 2], [PAGE.w - 12, PAGE.h - mY / 2]],   // BL, TL, TR（大きい・向き基準）
+    colTicks: colCenters.map(x => [[x, PAGE.h - mY / 2], [x, mY / 2]])              // 列ごとの小さいティック（上・下）
+  };
+}
+
+let SP = layout('ac35', 16 / 9);
+let PAGE_W = PAGE.w * MM, PAGE_H = PAGE.h * MM;
+
+const stripX = c => (SP.mX + c * SP.colPitch) * MM;
+const capX   = c => (SP.mX + c * SP.colPitch + SP.left) * MM;
+const capY   = rowTop => (SP.mY + (SP.rows - 1 - rowTop) * SP.pitch) * MM;
+
+function slotRect(slot, order){
+  let col, rowTop;
+  if(order === 'row'){ rowTop = Math.floor(slot / SP.cols); col = slot % SP.cols; }
+  else { col = Math.floor(slot / SP.rows); rowTop = slot % SP.rows; }
+  return {x: capX(col), y: capY(rowTop), w: SP.capW * MM, h: SP.capH * MM, col};
+}
+function perfOn(){ return SP.perf.ok !== false && (document.getElementById('perf') || {}).value !== 'off'; }
+
+function template(){
+  const rects = [], rounds = [], fills = [], lines = [];
+  const stripH = SP.rows * SP.pitch * MM, y0 = SP.mY * MM;
+  const P = SP.perf;
+  for(let c = 0; c < SP.cols; c++){
+    const fx = stripX(c);
+    rects.push([fx, y0, SP.film * MM, stripH]);                       // フィルム外形
+    if(perfOn()){
+      const ys = [];
+      for(let r = 0; r < SP.rows; r++){
+        const rb = y0 + r * SP.pitch * MM;
+        if(P.at === 'span')        for(let i = 0; i < P.per; i++) ys.push(rb + (i + 0.5) * SP.pitch / P.per * MM);
+        else if(P.at === 'center') ys.push(rb + SP.pitch / 2 * MM);
+        else                       ys.push(rb);                       // コマ境界
+      }
+      if(P.at === 'line') ys.push(y0 + stripH);                       // 最上部の1個
+      for(const cy of ys){
+        const py = cy - P.h * MM / 2;
+        rounds.push([fx + P.edge * MM, py, P.w * MM, P.h * MM, P.r * MM]);
+        if(P.sides === 2) rounds.push([fx + (SP.film - P.edge - P.w) * MM, py, P.w * MM, P.h * MM, P.r * MM]);
+      }
+    }
+    for(let r = 0; r < SP.rows; r++){
+      rects.push([capX(c), capY(r), SP.capW * MM, SP.capH * MM]);     // 画面
+      if(SP.rot){                                                     // 横送り＝絵の天地の向き
+        const y = capY(r) + SP.capH * MM / 2;
+        lines.push([capX(c) - 2.2 * MM, y, capX(c) - 0.5 * MM, y]);
+      }
+    }
+  }
+  for(const [mx, my] of SP.marks){
+    const s = 4 * MM;
+    fills.push([mx * MM - s / 2, my * MM - s / 2, s, s]);             // トンボ（大・向き基準）
+  }
+  if(SP.colTicks){
+    const t = 1.6 * MM;                                                // 列ごとの小さいティック
+    for(const [top, bot] of SP.colTicks){
+      for(const [mx, my] of [top, bot]) fills.push([mx * MM - t / 2, my * MM - t / 2, t, t]);
+    }
+  }
+  return {rects, rounds, fills, lines};
+}
+let TPL = template();
+function buildFormatMenu(){
+  const sel = document.getElementById('fmt');
+  let gr = null, og = null;
+  for(const f of FORMATS){
+    if(f.group !== gr){ gr = f.group; og = document.createElement('optgroup'); og.label = gr; sel.appendChild(og); }
+    const o = document.createElement('option');
+    o.value = f.key; o.textContent = f.label; og.appendChild(o);
+  }
+  sel.value = 'ac35';
+}
+function numberSpot(f){          // フィルムの外側（作画範囲の外）に縦書き
+  return {x: f.x - SP.left * MM + (SP.film + 1.0) * MM, y: f.y + f.h - 0.8 * MM, rot: -90, size: SP.numSize};
+}
+function frameLabel(pageIdx, slot){
+  const pos = pageIdx * SP.perPage + slot + 1;
+  if($('numMode').value === 'serial') return String(pos);
+  const c = Math.max(1, parseInt($('cycle').value, 10) || 24);
+  const n = ((pos - 1) % c) + 1, sec = Math.floor((pos - 1) / c) + 1;
+  return $('withSec').checked ? `${sec}-${n}` : String(n);
+}
+function place(iw, ih, f, fit){
+  if(SP.rot){ const t = iw; iw = ih; ih = t; }         // 横送りは絵を倒して置く
+  if(fit === 'stretch') return {x: f.x, y: f.y, w: f.w, h: f.h};
+  const s = fit === 'cover' ? Math.max(f.w / iw, f.h / ih) : Math.min(f.w / iw, f.h / ih);
+  const w = iw * s, h = ih * s;
+  return {x: f.x + (f.w - w) / 2, y: f.y + (f.h - h) / 2, w, h};
+}
+
+/* ===== 状態 ===== */
+const items = [];
+let page = 0, opacity = 0.20, frameOpacity = 1.00;
+const $ = id => document.getElementById(id);
+const status = (t, w) => { $('status').textContent = t; $('status').className = 'status' + (w ? ' warn' : ''); };
+
+function numKey(n){ const m = n.match(/(\d+)(?!.*\d)/); return m ? parseInt(m[1], 10) : NaN; }
+function sortItems(){
+  items.sort((a, b) => {
+    const na = numKey(a.name), nb = numKey(b.name);
+    if(!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+    return a.name.localeCompare(b.name, undefined, {numeric: true});
+  });
+}
+async function toJpeg(bmp, maxDim){
+  const s = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * s)), h = Math.max(1, Math.round(bmp.height * s));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#fff'; c.fillRect(0, 0, w, h); c.drawImage(bmp, 0, 0, w, h);
+  const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const tv = document.createElement('canvas'); tv.width = 80; tv.height = 45;
+  const t = tv.getContext('2d'); t.fillStyle = '#fff'; t.fillRect(0, 0, 80, 45);
+  const ts = Math.min(80 / w, 45 / h);
+  t.drawImage(cv, (80 - w * ts) / 2, (45 - h * ts) / 2, w * ts, h * ts);
+  const thumb = tv.toDataURL('image/jpeg', 0.6);
+  return {bytes, w, h, thumb, orig: bytes, origThumb: thumb};
+}
+/* ---- 動画からコマを拾う（Pixi to Roto 相当） ---- */
+let vsrc = null;
+function openVideo(file){
+  if(vsrc) URL.revokeObjectURL(vsrc.url);
+  const url = URL.createObjectURL(file);
+  const v = document.createElement('video');
+  v.preload = 'metadata'; v.muted = true; v.src = url;
+  v.onloadedmetadata = () => {
+    vsrc = {file, url, v, dur: v.duration};
+    $('vpanel').style.display = 'block';
+    $('vinfo').textContent = `${file.name}（${v.duration.toFixed(1)}秒 / ${v.videoWidth}×${v.videoHeight}）`;
+    $('vin').value = 0; $('vout').value = Math.round(v.duration * 10) / 10;
+    $('vin').max = $('vout').max = Math.round(v.duration * 10) / 10;
+    status('動画を読み込みました。拾い方を決めて「コマを取り込む」を押してください。');
+  };
+  v.onerror = () => status('この動画は読み込めません（H.264のmp4かwebmをお試しください）。', true);
+}
+function closeVideo(){
+  if(vsrc) URL.revokeObjectURL(vsrc.url);
+  vsrc = null; $('vpanel').style.display = 'none';
+}
+/* 諧調・輪郭の処理。edgeは0-100 */
+function processFrame(c, w, h, o){
+  const img = c.getImageData(0, 0, w, h), d = img.data;
+  const N = w * h;
+  const g = new Float32Array(N);
+  for(let i = 0, p = 0; i < N; i++, p += 4) g[i] = (d[p] * 299 + d[p + 1] * 587 + d[p + 2] * 114) / 1000;
+  const tone = v => {
+    let t = v / o.white;
+    t = (t - 0.5) * o.contrast + 0.5;
+    return t < 0 ? 0 : t > 1 ? 255 : t * 255;
+  };
+  let edge = null;
+  if(o.mode === 'edge' || o.edge > 0){
+    edge = new Float32Array(N);
+    for(let y = 1; y < h - 1; y++) for(let x = 1; x < w - 1; x++){
+      const i = y * w + x;
+      const gx = -g[i-w-1] - 2*g[i-1] - g[i+w-1] + g[i-w+1] + 2*g[i+1] + g[i+w+1];
+      const gy = -g[i-w-1] - 2*g[i-w] - g[i-w+1] + g[i+w-1] + 2*g[i+w] + g[i+w+1];
+      edge[i] = Math.hypot(gx, gy) / 4;
+    }
+  }
+  for(let i = 0, p = 0; i < N; i++, p += 4){
+    if(o.mode === 'edge'){
+      const e = Math.min(255, edge[i] * (0.6 + o.edge / 25));
+      const v = 255 - e;
+      d[p] = d[p+1] = d[p+2] = v;
+    }else if(o.mode === 'gray'){
+      let v = tone(g[i]);
+      if(o.edge > 0) v = Math.min(v, 255 - Math.min(255, edge[i] * o.edge / 25));
+      d[p] = d[p+1] = d[p+2] = v;
+    }else{
+      const k = g[i] > 0 ? tone(g[i]) / g[i] : 1;
+      let r = d[p]*k, gg = d[p+1]*k, b = d[p+2]*k;
+      if(o.edge > 0){
+        const e = Math.min(255, edge[i] * o.edge / 25);
+        r = Math.min(r, 255 - e); gg = Math.min(gg, 255 - e); b = Math.min(b, 255 - e);
+      }
+      d[p] = Math.min(255, r); d[p+1] = Math.min(255, gg); d[p+2] = Math.min(255, b);
+    }
+    d[p+3] = 255;
+  }
+  c.putImageData(img, 0, 0);
+}
+async function grabFrames(){
+  if(!vsrc) return;
+  const v = vsrc.v;
+  const t0 = Math.max(0, parseFloat($('vin').value) || 0);
+  const t1 = Math.min(vsrc.dur, parseFloat($('vout').value) || vsrc.dur);
+  if(t1 <= t0){ status('範囲が正しくありません。', true); return; }
+  const byChange = $('vmode').value === 'change';
+  const step = 1 / (byChange ? 24 : parseFloat($('vfps').value));
+  const th = parseFloat($('vth').value);
+  const maxDim = parseInt($('res').value, 10);
+  const ar = v.videoHeight / v.videoWidth;
+  const w = Math.min(maxDim, v.videoWidth), h = Math.max(1, Math.round(w * ar));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const c = cv.getContext('2d', {willReadFrequently: true});
+  const sm = document.createElement('canvas'); sm.width = 64; sm.height = 36;
+  const sc = sm.getContext('2d', {willReadFrequently: true});
+  const opts = {mode: $('vtone').value, contrast: +$('vcon').value / 100,
+                white: +$('vwhite').value, edge: +$('vedge').value};
+  let last = null, n = 0, guard = 0;
+  const total = Math.ceil((t1 - t0) / step);
+  for(let k = 0; k <= total && guard < 2000; k++, guard++){
+    const t = t0 + k * step;
+    if(t > t1) break;
+    v.currentTime = t;
+    await new Promise(r => { v.onseeked = r; setTimeout(r, 800); });
+    if(byChange){
+      sc.drawImage(v, 0, 0, 64, 36);
+      const g = sc.getImageData(0, 0, 64, 36).data;
+      const cur = new Float32Array(64 * 36);
+      for(let i = 0, p = 0; i < cur.length; i++, p += 4) cur[i] = (g[p] + g[p+1] + g[p+2]) / 3;
+      if(last){
+        let diff = 0;
+        for(let i = 0; i < cur.length; i++) diff += Math.abs(cur[i] - last[i]);
+        diff /= cur.length;
+        if(diff < th) continue;
+      }
+      last = cur;
+    }
+    c.drawImage(v, 0, 0, w, h);
+    processFrame(c, w, h, opts);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const tv = document.createElement('canvas'); tv.width = 80; tv.height = 45;
+    const tc = tv.getContext('2d');
+    tc.fillStyle = '#fff'; tc.fillRect(0, 0, 80, 45);
+    const ts = Math.min(80 / w, 45 / h);
+    tc.drawImage(cv, (80 - w * ts) / 2, (45 - h * ts) / 2, w * ts, h * ts);
+    n++;
+    const th = tv.toDataURL('image/jpeg', 0.6);
+    items.push({name: `v${String(n).padStart(4, '0')}`, bytes, w, h, thumb: th, orig: bytes, origThumb: th});
+    if(n % 3 === 0) status(`取り込み中… ${n}コマ（${t.toFixed(1)}秒）`);
+  }
+  await applyTint();
+  status(`${n}コマ取り込みました（${(n / SP.perPage).toFixed(2)}枚ぶん）。`);
+}
+
+/* 下絵を水色（ノンフォトブルー）に置き換える。白は白のまま、濃いところほど青くなる */
+const BLUE = [96, 168, 224];
+async function tintItem(it){
+  const bmp = await createImageBitmap(new Blob([it.orig], {type: 'image/jpeg'}));
+  const cv = document.createElement('canvas'); cv.width = it.w; cv.height = it.h;
+  const c = cv.getContext('2d', {willReadFrequently: true});
+  c.drawImage(bmp, 0, 0); bmp.close();
+  const img = c.getImageData(0, 0, it.w, it.h), d = img.data;
+  for(let p = 0; p < d.length; p += 4){
+    const v = (d[p] * 299 + d[p + 1] * 587 + d[p + 2] * 114) / 1000;
+    const k = (255 - v) / 255;                       // インクの量
+    d[p]     = 255 - k * (255 - BLUE[0]);
+    d[p + 1] = 255 - k * (255 - BLUE[1]);
+    d[p + 2] = 255 - k * (255 - BLUE[2]);
+  }
+  c.putImageData(img, 0, 0);
+  const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+  it.bytes = new Uint8Array(await blob.arrayBuffer());
+  const tv = document.createElement('canvas'); tv.width = 80; tv.height = 45;
+  const t = tv.getContext('2d'); t.fillStyle = '#fff'; t.fillRect(0, 0, 80, 45);
+  const ts = Math.min(80 / it.w, 45 / it.h);
+  t.drawImage(cv, (80 - it.w * ts) / 2, (45 - it.h * ts) / 2, it.w * ts, it.h * ts);
+  it.thumb = tv.toDataURL('image/jpeg', 0.6);
+}
+async function applyTint(from = 0){
+  const blue = $('tint').value === 'blue';
+  for(let i = from; i < items.length; i++){
+    const it = items[i];
+    if(!blue){ it.bytes = it.orig; it.thumb = it.origThumb; continue; }
+    if(it.tinted) continue;
+    status(`色を置き換え中… ${i + 1} / ${items.length}`);
+    await tintItem(it);
+  }
+  items.forEach(it => it.tinted = blue);
+  refresh();
+}
+
+async function addFiles(files){
+  const vid = [...files].find(f => /^video\//.test(f.type));
+  if(vid){ openVideo(vid); return; }
+  const list = [...files].filter(f => /^image\//.test(f.type));
+  if(!list.length){ status('画像か動画のファイルを入れてください。', true); return; }
+  const maxDim = parseInt($('res').value, 10);
+  let ok = 0, ng = 0;
+  for(let i = 0; i < list.length; i++){
+    status(`読み込み中… ${i + 1} / ${list.length}`);
+    try{ const b = await createImageBitmap(list[i]); items.push({name: list[i].name, ...(await toJpeg(b, maxDim))}); b.close(); ok++; }
+    catch(e){ ng++; }
+  }
+  sortItems(); await applyTint(); 
+  status(ng ? `${ok}枚を読み込み、${ng}枚は読めませんでした。` : `${ok}枚を読み込みました。`, ng > 0);
+}
+
+function showSpec(){
+  const px = mm => Math.round(mm / 25.4 * 600);
+  const f = FMT[SP.key];
+  const img = SP.custom ? [SP.capW, SP.capH] : (SP.rot ? [f.along, f.across] : [f.across, f.along]);
+  $('spec').innerHTML =
+    `フィルム幅 <b>${SP.film.toFixed(2)} mm</b>／画面 <b>${img[0].toFixed(2)} × ${img[1].toFixed(2)} mm</b>` +
+    `（${SP.ratio.toFixed(2)}:1${SP.squeeze > 1 ? '・アナモ' + SP.squeeze + '倍' : ''}）<br>` +
+    `1コマ送り <b>${SP.pitch.toFixed(3)} mm</b>` +
+    (SP.custom ? '' : `／パーフ ${SP.perf.w}×${SP.perf.h}mm を1コマに${SP.perf.per}個・${SP.perf.sides === 2 ? '両側' : '片側'}`) + '<br>' +
+    `${$('paper').value}に <b>${SP.cols}列 × ${SP.rows}段 = ${SP.perPage}コマ</b>（24fpsで ${(SP.perPage / 24).toFixed(2)}秒）<br>` +
+    `600dpiスキャンで 1コマ ${px(SP.capW)} × ${px(SP.capH)} px` +
+    (SP.rot ? '<br><b>※横送りの規格です。</b>絵は左に90°倒して描きます（枠の左の目印が天）' : '') +
+    (perfOn() ? '' : '<br>※パーフォレーションなし');
+}
+function refresh(){
+  const box = $('list'); box.innerHTML = '';
+  items.forEach((it, i) => {
+    const d = document.createElement('div');
+    d.className = 'item'; d.draggable = true; d.dataset.i = i;
+    d.innerHTML = `<span class="num">${i + 1}</span><img src="${it.thumb}"><span class="name"></span><button class="x">×</button>`;
+    d.querySelector('.name').textContent = it.name;
+    d.querySelector('.x').onclick = e => { e.stopPropagation(); items.splice(i, 1); refresh(); };
+    box.appendChild(d);
+  });
+  const pc = Math.max(1, pageCount());
+  $('count').textContent = `${items.length} 枚 / ${pc} ページ`;
+  $('export').textContent = items.length ? 'PDFを書き出す' : '白紙の用紙を書き出す';
+  $('start').max = SP.perPage;
+  if(page >= pc) page = pc - 1;
+  $('pageno').textContent = `${page + 1} / ${pc}`;
+  showSpec(); draw();
+}
+function pageCount(){
+  const off = parseInt($('start').value, 10) - 1 || 0;
+  return items.length ? Math.ceil((items.length + off) / SP.perPage) : 1;
+}
+let dragFrom = null;
+$('list').addEventListener('dragstart', e => { const it = e.target.closest('.item'); if(!it) return; dragFrom = +it.dataset.i; it.classList.add('drag'); });
+$('list').addEventListener('dragend', e => { const it = e.target.closest('.item'); if(it) it.classList.remove('drag'); });
+$('list').addEventListener('dragover', e => e.preventDefault());
+$('list').addEventListener('drop', e => {
+  e.preventDefault(); if(dragFrom === null) return;
+  const it = e.target.closest('.item'); const to = it ? +it.dataset.i : items.length - 1;
+  const [m] = items.splice(dragFrom, 1); items.splice(to, 0, m); dragFrom = null; refresh();
+});
+
+function pageSlots(p){
+  const off = parseInt($('start').value, 10) - 1 || 0, out = [];
+  for(let s = 0; s < SP.perPage; s++){
+    const idx = p * SP.perPage + s - off;
+    if(idx >= 0 && idx < items.length) out.push({slot: s, idx});
+  }
+  return out;
+}
+const cv = $('cv'), ctx = cv.getContext('2d');
+let drawToken = 0;
+/* 左端の余白に縦書きで規格情報を記す（何の用紙か後から分かるように） */
+function sheetLabel(){
+  const paper = (document.getElementById('paper') || {}).value || 'A4';
+  // 既存のPDFはHelvetica(ASCIIのみ)なので、日本語ラベルではなくキー名で記す
+  return `${SP.key.toUpperCase()} / ${paper} / ${SP.cols}x${SP.rows}=${SP.perPage} / ${SP.film.toFixed(2)}mm`;
+}
+function labelSpot(){
+  return {x: 3.2 * MM, y: (PAGE.h / 2) * MM, size: 3.0 * MM};
+}
+
+async function draw(){
+  const token = ++drawToken, scale = 820 / PAGE_W;
+  cv.width = Math.round(PAGE_W * scale); cv.height = Math.round(PAGE_H * scale);
+  const Y = y => (PAGE_H - y) * scale;
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  const order = $('order').value, fit = $('fit').value;
+
+  // 1. 下絵
+  for(const {slot, idx} of pageSlots(page)){
+    const it = items[idx], f = slotRect(slot, order), p = place(it.w, it.h, f, fit);
+    const url = URL.createObjectURL(new Blob([it.bytes], {type: 'image/jpeg'}));
+    const img = new Image();
+    await new Promise(r => { img.onload = r; img.onerror = r; img.src = url; });
+    if(token !== drawToken){ URL.revokeObjectURL(url); return; }
+    ctx.save(); ctx.beginPath(); ctx.rect(f.x * scale, Y(f.y + f.h), f.w * scale, f.h * scale); ctx.clip();
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(img, p.x * scale, Y(p.y + p.h), p.w * scale, p.h * scale);
+    ctx.restore(); URL.revokeObjectURL(url);
+  }
+  if(token !== drawToken) return;
+
+  // 2. 枠（下絵の上）
+  ctx.save(); ctx.globalAlpha = frameOpacity;
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 0.5 * scale; ctx.beginPath();
+  for(const [x, y, w, h] of TPL.rects) ctx.rect(x * scale, Y(y + h), w * scale, h * scale);
+  for(const [x, y, w, h, r] of TPL.rounds){
+    if(ctx.roundRect) ctx.roundRect(x * scale, Y(y + h), w * scale, h * scale, r * scale);
+    else ctx.rect(x * scale, Y(y + h), w * scale, h * scale);
+  }
+  for(const [x0, y0, x1, y1] of TPL.lines){ ctx.moveTo(x0 * scale, Y(y0)); ctx.lineTo(x1 * scale, Y(y1)); }
+  ctx.stroke(); ctx.restore();
+
+  // 3. トンボと番号
+  ctx.fillStyle = '#000';
+  for(const [x, y, w, h] of TPL.fills) ctx.fillRect(x * scale, Y(y + h), w * scale, h * scale);
+  ctx.save(); ctx.fillStyle = '#8a8a8a';
+  for(let slot = 0; slot < SP.perPage; slot++){
+    const sp = numberSpot(slotRect(slot, order));
+    ctx.save(); ctx.font = `${sp.size * scale}px monospace`;
+    ctx.translate(sp.x * scale, Y(sp.y)); ctx.rotate(Math.PI / 2);
+    ctx.fillText(frameLabel(page, slot), 0, 0); ctx.restore();
+  }
+  ctx.restore();
+
+  // 4. 用紙の左端に規格ラベル（縦書き）
+  ctx.save(); ctx.fillStyle = '#8a8a8a';
+  const lb = labelSpot();
+  ctx.font = `${lb.size * scale}px monospace`;
+  ctx.translate(lb.x * scale, Y(lb.y)); ctx.rotate(Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.fillText(sheetLabel(), 0, 0);
+  ctx.restore();
+}
+
+/* ===== PDF ===== */
+function n3(v){ return (Math.round(v * 1000) / 1000).toString(); }
+function pdfEscape(str){ return String(str).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
+function roundRectPath(x, y, w, h, r){
+  const k = 0.5523 * r, X = x + w, T = y + h;
+  return `${n3(x + r)} ${n3(y)} m\n${n3(X - r)} ${n3(y)} l\n${n3(X - r + k)} ${n3(y)} ${n3(X)} ${n3(y + r - k)} ${n3(X)} ${n3(y + r)} c\n` +
+    `${n3(X)} ${n3(T - r)} l\n${n3(X)} ${n3(T - r + k)} ${n3(X - r + k)} ${n3(T)} ${n3(X - r)} ${n3(T)} c\n` +
+    `${n3(x + r)} ${n3(T)} l\n${n3(x + r - k)} ${n3(T)} ${n3(x)} ${n3(T - r + k)} ${n3(x)} ${n3(T - r)} c\n` +
+    `${n3(x)} ${n3(y + r)} l\n${n3(x)} ${n3(y + r - k)} ${n3(x + r - k)} ${n3(y)} ${n3(x + r)} ${n3(y)} c\nh\n`;
+}
+function contentStream(slots, order, fit, pageIdx){
+  let s = '';
+  // 下絵を先に敷いて、枠・トンボ・番号はその上に重ねる（枠が薄くならないように）
+  slots.forEach(({slot, idx}, k) => {
+    const it = items[idx], f = slotRect(slot, order), p = place(it.w, it.h, f, fit);
+    s += `q\n${n3(f.x)} ${n3(f.y)} ${n3(f.w)} ${n3(f.h)} re W n\n/GS1 gs\n`;
+    s += `${n3(p.w)} 0 0 ${n3(p.h)} ${n3(p.x)} ${n3(p.y)} cm\n/Im${k} Do\nQ\n`;
+  });
+  s += 'q\n/GS2 gs\n0.5 w\n0 G\n';
+  for(const [x, y, w, h] of TPL.rects) s += `${n3(x)} ${n3(y)} ${n3(w)} ${n3(h)} re\n`;
+  for(const [x, y, w, h, r] of TPL.rounds) s += roundRectPath(x, y, w, h, r);
+  for(const [x0, y0, x1, y1] of TPL.lines) s += `${n3(x0)} ${n3(y0)} m ${n3(x1)} ${n3(y1)} l\n`;
+  s += 'S\nQ\n0 g\n';
+  for(const [x, y, w, h] of TPL.fills) s += `${n3(x)} ${n3(y)} ${n3(w)} ${n3(h)} re\n`;
+  s += 'f\n';
+  s += `0.55 g\nBT /F1 ${n3(SP.numSize)} Tf\n`;
+  for(let slot = 0; slot < SP.perPage; slot++){
+    const sp = numberSpot(slotRect(slot, order));
+    s += `0 -1 1 0 ${n3(sp.x)} ${n3(sp.y)} Tm (${pdfEscape(frameLabel(pageIdx, slot))}) Tj\n`;
+  }
+  s += 'ET\n';
+  // 用紙の左端に規格ラベル（縦書き）
+  const lb = labelSpot();
+  s += `0.55 g\nBT /F1 ${n3(lb.size)} Tf\n`;
+  s += `0 -1 1 0 ${n3(lb.x)} ${n3(lb.y)} Tm (${pdfEscape(sheetLabel())}) Tj\n`;
+  s += 'ET\n';
+  return s;
+}
+function buildPdf(){
+  const enc = new TextEncoder(); const parts = []; let size = 0;
+  const put = d => { const b = (typeof d === 'string') ? enc.encode(d) : d; parts.push(b); size += b.length; };
+  const order = $('order').value, fit = $('fit').value;
+  const P = pageCount(); const pages = [];
+  for(let p = 0; p < P; p++) pages.push(pageSlots(p));
+  const PAGE0 = 6; let imgNo = PAGE0 + P * 2;
+  const imgNums = pages.map(sl => sl.map(() => imgNo++));
+  const total = 5 + P * 2 + pages.reduce((a, b) => a + b.length, 0);
+  const offs = new Array(total + 1).fill(0);
+  const obj = (n, body, stream) => {
+    offs[n] = size; put(`${n} 0 obj\n${body}\n`);
+    if(stream){ put('stream\n'); put(stream); put('\nendstream\n'); }
+    put('endobj\n');
+  };
+  put('%PDF-1.4\n'); put(new Uint8Array([0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]));
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, `<< /Type /Pages /Count ${P} /Kids [${pages.map((_, p) => `${PAGE0 + p * 2} 0 R`).join(' ')}] >>`);
+  obj(3, `<< /Type /ExtGState /ca ${opacity.toFixed(3)} /CA ${opacity.toFixed(3)} /BM /Normal >>`);
+  obj(4, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  obj(5, `<< /Type /ExtGState /ca ${frameOpacity.toFixed(3)} /CA ${frameOpacity.toFixed(3)} /BM /Normal >>`);
+  pages.forEach((sl, p) => {
+    const xo = sl.map((_, k) => `/Im${k} ${imgNums[p][k]} 0 R`).join(' ');
+    obj(PAGE0 + p * 2, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${n3(PAGE_W)} ${n3(PAGE_H)}]` +
+      ` /Resources << /ExtGState << /GS1 3 0 R /GS2 5 0 R >> /Font << /F1 4 0 R >> /XObject << ${xo} >> >>` +
+      ` /Contents ${PAGE0 + 1 + p * 2} 0 R >>`);
+    const cs = enc.encode(contentStream(sl, order, fit, p));
+    obj(PAGE0 + 1 + p * 2, `<< /Length ${cs.length} >>`, cs);
+  });
+  pages.forEach((sl, p) => sl.forEach(({idx}, k) => {
+    const it = items[idx];
+    obj(imgNums[p][k], `<< /Type /XObject /Subtype /Image /Width ${it.w} /Height ${it.h}` +
+      ` /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${it.bytes.length} >>`, it.bytes);
+  }));
+  const xref = size;
+  let x = `xref\n0 ${total + 1}\n0000000000 65535 f \n`;
+  for(let i = 1; i <= total; i++) x += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+  put(x); put(`trailer\n<< /Size ${total + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  const out = new Uint8Array(size); let o = 0;
+  for(const b of parts){ out.set(b, o); o += b.length; }
+  return out;
+}
+
+/* ===== 操作 ===== */
+function reLayout(){
+  const ps = PAPERS[$('paper').value] || PAPERS.A4;
+  PAGE.w = ps[0]; PAGE.h = ps[1];
+  PAGE_W = PAGE.w * MM; PAGE_H = PAGE.h * MM;
+  SP = layout($('fmt').value, parseFloat($('aspect').value));
+  $('aspectRow').style.display = SP.custom ? 'flex' : 'none';
+  TPL = template(); page = 0; refresh();
+}
+$('fmt').onchange = reLayout;
+$('paper').onchange = reLayout;
+$('perf').onchange = reLayout;
+$('tint').onchange = () => applyTint();
+$('aspect').onchange = reLayout;
+$('drop').onclick = () => {
+  const i = document.createElement('input');
+  i.type = 'file'; i.multiple = true; i.accept = 'image/*,video/*';
+  i.onchange = () => addFiles(i.files); i.click();
+};
+['dragenter', 'dragover'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.add('hot'); }));
+['dragleave', 'drop'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.remove('hot'); }));
+$('drop').addEventListener('drop', e => addFiles(e.dataTransfer.files));
+$('resort').onclick = () => { sortItems(); refresh(); };
+$('vclose').onclick = closeVideo;
+$('vmode').onchange = () => {
+  const ch = $('vmode').value === 'change';
+  $('vthRow').style.display = ch ? 'flex' : 'none';
+  $('vfpsRow').style.display = ch ? 'none' : 'flex';
+};
+$('vth').oninput = () => $('vthv').textContent = $('vth').value;
+$('vcon').oninput = () => $('vconv').textContent = (+$('vcon').value / 100).toFixed(2);
+$('vwhite').oninput = () => $('vwhitev').textContent = $('vwhite').value;
+$('vedge').oninput = () => $('vedgev').textContent = $('vedge').value;
+$('vgrab').onclick = () => { $('vgrab').disabled = true; grabFrames().finally(() => $('vgrab').disabled = false); };
+$('clear').onclick = () => { items.length = 0; page = 0; refresh(); status(''); };
+function bindOpacity(attr, sl, lb, apply){
+  const btns = [...document.querySelectorAll(`.seg button[data-${attr}]`)];
+  const sync = v => { apply(v / 100); $(sl).value = v; $(lb).textContent = v + '%'; btns.forEach(o => o.classList.toggle('on', +o.dataset[attr] === v)); draw(); };
+  btns.forEach(b => b.onclick = () => sync(+b.dataset[attr]));
+  $(sl).oninput = () => sync(+$(sl).value);
+}
+bindOpacity('op', 'opslider', 'opval', v => opacity = v);
+bindOpacity('fop', 'fopslider', 'fopval', v => frameOpacity = v);
+['fit', 'order'].forEach(id => $(id).onchange = draw);
+$('cycle').oninput = draw;
+$('withSec').onchange = draw;
+$('numMode').onchange = () => { $('cycRow').style.display = $('numMode').value === 'cycle' ? 'flex' : 'none'; draw(); };
+$('start').onchange = () => { page = 0; refresh(); };
+$('prev').onclick = () => { if(page > 0){ page--; refresh(); } };
+$('next').onclick = () => { if(page < pageCount() - 1){ page++; refresh(); } };
+$('export').onclick = () => {
+  status('PDFを作成中…');
+  setTimeout(() => {
+    try{
+      const bytes = buildPdf();
+      const url = URL.createObjectURL(new Blob([bytes], {type: 'application/pdf'}));
+      const a = document.createElement('a'); a.href = url;
+      a.download = `${$('fname').value || 'sheet'}_${SP.key}_${$('paper').value}.pdf`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      status(`書き出しました（${pageCount()}ページ）。`);
+    }catch(e){ status('失敗：' + e.message, true); }
+  }, 30);
+};
+buildFormatMenu();
+reLayout();
+</script>
+</body>
+</html>
